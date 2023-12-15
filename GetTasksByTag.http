@@ -1,0 +1,17 @@
+GET  localhost:8080/tag/buy
+Accept: application/json
+
+###
+
+GET  localhost:8080/tag/bread
+Accept: application/json
+
+###
+
+GET  localhost:8080/tag/noo
+Accept: application/json
+
+###
+
+GET  localhost:8080/tag/
+Accept: application/json

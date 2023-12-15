@@ -1,0 +1,26 @@
+POST localhost:8080/task
+Content-Type: application/json
+
+{
+  "text": "buy bread",
+  "tags": ["buy", "bread"]
+}
+###
+
+POST localhost:8080/task
+Content-Type: application/json
+
+{
+"text": "buy milk",
+"tags": ["buy", "bread"]
+}
+
+###
+
+POST localhost:8080/task
+Content-Type: application/json
+
+{
+  "text": "wash car",
+  "tags": ["car", "washing"]
+}

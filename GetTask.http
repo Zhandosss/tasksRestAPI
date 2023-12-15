@@ -1,0 +1,17 @@
+GET  localhost:8080/task/1
+Accept: application/json
+
+###
+
+GET  localhost:8080/task/2
+Accept: application/json
+
+###
+
+GET  localhost:8080/task/100
+Accept: application/json
+
+###
+
+GET  localhost:8080/task/papa
+Accept: application/json

@@ -1,0 +1,14 @@
+DELETE localhost:8080/task/1
+Content-Type: application/json
+
+###
+DELETE localhost:8080/task/2
+Content-Type: application/json
+
+###
+DELETE localhost:8080/task/200
+Content-Type: application/json
+
+###
+DELETE localhost:8080/task/papa
+Content-Type: application/json
