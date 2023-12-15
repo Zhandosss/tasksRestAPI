@@ -1,13 +1,16 @@
 package getByDue
 
 import (
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"restAPI/internal/http-server/response"
 	"restAPI/internal/model"
-	"time"
+	"restAPI/pkg/lib/verification"
+	"strconv"
 )
 
 type Response struct {
@@ -16,7 +19,7 @@ type Response struct {
 }
 
 type GetterByDue interface {
-	GetTasksByDueDate(year int, month time.Month, day int) ([]model.Task, error)
+	GetTasksByDueDate(day, month, year int) ([]model.Task, error)
 }
 
 func New(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
@@ -27,5 +30,29 @@ func New(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
 		year := chi.URLParam(r, "year")
 		month := chi.URLParam(r, "month")
 		day := chi.URLParam(r, "day")
+		if !verification.Date(day, month, year) {
+			log.Error(`incorrect data format`, slog.String("data", fmt.Sprintf("%s:%s:%s", day, month, year)))
+			render.JSON(w, r, response.Error("incorrect data format"))
+			return
+		}
+		dayInt, _ := strconv.Atoi(day)
+		monthInt, _ := strconv.Atoi(month)
+		yearInt, _ := strconv.Atoi(year)
+
+		tasks, err := getterByDue.GetTasksByDueDate(dayInt, monthInt, yearInt)
+		if err != nil {
+			log.Error("get tasks by date", slog.Attr{
+				Key:   "error",
+				Value: slog.StringValue(err.Error()),
+			})
+			render.JSON(w, r, response.Error("couldn't find any data"))
+			return
+		}
+		log.Info("tasks copied by data", slog.String("day", day), slog.String("month", month), slog.String("year", year))
+		render.JSON(w, r, Response{
+			Response: response.Ok(),
+			Tasks:    tasks,
+		})
+
 	}
 }
