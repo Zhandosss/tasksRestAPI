@@ -1,6 +1,8 @@
 package verification
 
-func date(day, month, year string) bool {
+import "strconv"
+
+func Date(day, month, year string) bool {
 	var (
 		thirtyDayMonth = map[string]struct{}{
 			"4":  struct{}{},
@@ -25,7 +27,14 @@ func date(day, month, year string) bool {
 		return false
 	}
 	if month == "2" {
-		yearInt, _ :=
+		yearInt, _ := strconv.Atoi(year)
+		if yearInt%4 == 0 && yearInt%100 != 0 || yearInt%400 == 0 {
+			if day > "29" {
+				return false
+			}
+		} else {
+			return false
+		}
 	}
 	return true
 }

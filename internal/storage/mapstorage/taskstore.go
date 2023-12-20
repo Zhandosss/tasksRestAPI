@@ -111,12 +111,13 @@ func (ts *TaskStore) GetTasksByTag(tag string) ([]model.Task, error) {
 	return ans, nil
 }
 
-func (ts *TaskStore) GetTasksByDueDate(year int, month time.Month, day int) ([]model.Task, error) {
+func (ts *TaskStore) GetTasksByDueDate(day, month, year int) ([]model.Task, error) {
 	ts.Lock()
 	defer ts.Unlock()
 	ans := make([]model.Task, 0)
 	for _, t := range ts.tasks {
-		y, m, d := t.Due.Date()
+		y, mm, d := t.Due.Date()
+		m := int(mm)
 		if y == year && month == m && d == day {
 			ans = append(ans, *t)
 		}
