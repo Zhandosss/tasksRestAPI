@@ -11,7 +11,7 @@ import (
 )
 
 type TaskDeleter interface {
-	DeleteTask(id int) error
+	DeleteTask(taskID int64) error
 }
 
 func New(log *slog.Logger, deleter TaskDeleter) http.HandlerFunc {
@@ -34,7 +34,7 @@ func New(log *slog.Logger, deleter TaskDeleter) http.HandlerFunc {
 			render.JSON(w, r, response.Error("incorrect task id record"))
 			return
 		}
-		err = deleter.DeleteTask(taskId)
+		err = deleter.DeleteTask(int64(taskId))
 		if err != nil {
 			log.Error("can't found task", slog.Attr{
 				Key:   "error",

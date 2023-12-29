@@ -3,7 +3,7 @@ Accept: application/json
 
 ###
 
-GET  localhost:8080/task/2
+GET  localhost:8080/task/6
 Accept: application/json
 
 ###
@@ -14,4 +14,18 @@ Accept: application/json
 ###
 
 GET  localhost:8080/task/papa
+Accept: application/json
+
+###
+
+GET  localhost:8080/due-date/2023/12/28
+Accept: application/json
+
+###
+
+GET  localhost:8080/due-date/2023/12/29
+Accept: application/json
+###
+
+GET  localhost:8080/due-date/2023/12/32
 Accept: application/json

@@ -1,10 +1,18 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Task struct {
-	Id   int       `json:"id"`
-	Text string    `json:"text"`
-	Tags []string  `json:"tags"`
-	Due  time.Time `json:"due"`
+	ID   int64     `json:"id" db:"task_id"`
+	Text string    `json:"text" db:"task"`
+	Tags []string  `json:"tags" db:"omitempty"`
+	Date time.Time `json:"due" db:"date"`
+}
+
+func (task *Task) String() string {
+	return fmt.Sprintf("task ID: %d\n task text: %s\n task tags: %v\n task date %v\n",
+		task.ID, task.Text, task.Tags, task.Date)
 }

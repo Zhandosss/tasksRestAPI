@@ -16,11 +16,11 @@ type Request struct {
 
 type Response struct {
 	response.Response
-	TaskId int `json:"task_id"`
+	TaskId int64 `json:"task_id"`
 }
 
 type TaskCreater interface {
-	CreateTask(text string, tags []string, due time.Time) (int, error)
+	CreateTask(text string, tags []string, date time.Time) (int64, error)
 }
 
 func New(log *slog.Logger, taskCreater TaskCreater) http.HandlerFunc {
@@ -52,7 +52,7 @@ func New(log *slog.Logger, taskCreater TaskCreater) http.HandlerFunc {
 			render.JSON(w, r, response.Error("failed to create task"))
 			return
 		}
-		log.Info("task created", slog.Int("taskID", taskId))
+		log.Info("task created", slog.Int64("taskID", taskId))
 		render.JSON(w, r, Response{
 			Response: response.Ok(),
 			TaskId:   taskId,

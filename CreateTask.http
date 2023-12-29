@@ -12,7 +12,7 @@ Content-Type: application/json
 
 {
 "text": "buy milk",
-"tags": ["buy", "bread"]
+"tags": ["buy", "milk"]
 }
 
 ###
@@ -24,3 +24,34 @@ Content-Type: application/json
   "text": "wash car",
   "tags": ["car", "washing"]
 }
+
+###
+
+POST localhost:8080/task
+Content-Type: application/json
+
+{
+  "text": "task with no tags",
+  "tags": []
+}
+
+###
+
+POST localhost:8080/task
+Content-Type: application/json
+
+{
+  "text": "task with one tag",
+  "tags": ["oneTag"]
+}
+###
+
+POST localhost:8080/task
+Content-Type: application/json
+
+{
+  "text": "29 dec tag",
+  "tags": ["date"]
+}
+
+

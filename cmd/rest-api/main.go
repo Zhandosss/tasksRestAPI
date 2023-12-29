@@ -3,17 +3,20 @@ package main
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jmoiron/sqlx"
 	"log/slog"
 	"net/http"
-	"restAPI/internal/config"
 	"restAPI/internal/http-server/handlers/create"
 	"restAPI/internal/http-server/handlers/deleteAll"
 	"restAPI/internal/http-server/handlers/deleteById"
 	"restAPI/internal/http-server/handlers/getAll"
-	"restAPI/internal/http-server/handlers/getByDue"
+	"restAPI/internal/http-server/handlers/getByDate"
 	"restAPI/internal/http-server/handlers/getById"
 	"restAPI/internal/http-server/handlers/getByTag"
-	"restAPI/internal/storage/mapstorage"
+	"restAPI/internal/repositories/tasks"
+
+	"restAPI/internal/config"
+	"restAPI/internal/db/postgres"
 	"restAPI/pkg/logger"
 )
 
@@ -26,7 +29,14 @@ func main() {
 	log.Debug("debug is enabled")
 	log.Debug("config value:", cfg)
 
-	storage := mapstorage.NewTaskStore()
+	storageCfg := postgres.NewConfig(log)
+	log.Debug("storage config value:", storageCfg)
+	conn, err := postgres.New(storageCfg)
+	defer closeConn(conn)
+	if err != nil {
+		log.Error("cannot create ")
+	}
+	storage := tasks.NewRepository(conn, log)
 
 	router := chi.NewRouter()
 
@@ -39,7 +49,7 @@ func main() {
 	router.Delete("/task", deleteAll.New(log, storage))
 	router.Delete("/task/{taskId}", deleteById.New(log, storage))
 	router.Get("/tag/{tag}", getByTag.New(log, storage))
-	router.Get("/tag/{year}/{month}/{day}", getByDue.New(log, storage))
+	router.Get("/due-date/{year}/{month}/{day}", getByDate.New(log, storage))
 
 	log.Info("starting server", slog.String("address", cfg.Address))
 
@@ -52,10 +62,14 @@ func main() {
 	}
 
 	if err := server.ListenAndServe(); err != nil {
-		log.Error("Failed to start the server", slog.Attr{
-			Key:   "error",
-			Value: slog.StringValue(err.Error()),
-		})
+		log.Error("Failed to start the server", slog.String("error", err.Error()))
 	}
 	log.Error("Server stopped")
+}
+
+func closeConn(conn *sqlx.DB) {
+	err := conn.Close()
+	if err != nil {
+		panic("can't close connection to db")
+	}
 }

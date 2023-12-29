@@ -17,7 +17,7 @@ type Response struct {
 }
 
 type TaskGetter interface {
-	GetTask(id int) (model.Task, error)
+	GetTask(taskID int64) (model.Task, error)
 }
 
 func New(log *slog.Logger, taskGetter TaskGetter) http.HandlerFunc {
@@ -40,7 +40,7 @@ func New(log *slog.Logger, taskGetter TaskGetter) http.HandlerFunc {
 			render.JSON(w, r, response.Error("incorrect task id record"))
 			return
 		}
-		task, err := taskGetter.GetTask(taskId)
+		task, err := taskGetter.GetTask(int64(taskId))
 		if err != nil {
 			log.Error("can't found task", slog.Attr{
 				Key:   "error",

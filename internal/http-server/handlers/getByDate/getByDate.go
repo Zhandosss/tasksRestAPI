@@ -1,4 +1,4 @@
-package getByDue
+package getByDate
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ type Response struct {
 }
 
 type GetterByDue interface {
-	GetTasksByDueDate(day, month, year int) ([]model.Task, error)
+	GetTasksByDate(day, month, year int) ([]model.Task, error)
 }
 
 func New(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
@@ -39,7 +39,7 @@ func New(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
 		monthInt, _ := strconv.Atoi(month)
 		yearInt, _ := strconv.Atoi(year)
 
-		tasks, err := getterByDue.GetTasksByDueDate(dayInt, monthInt, yearInt)
+		tasks, err := getterByDue.GetTasksByDate(dayInt, monthInt, yearInt)
 		if err != nil {
 			log.Error("get tasks by date", slog.Attr{
 				Key:   "error",

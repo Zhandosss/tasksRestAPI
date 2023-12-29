@@ -21,11 +21,11 @@ type HTTPServer struct {
 func New() *Config {
 	const pathOfConfig = `./config/config.yaml`
 	if _, err := os.Stat(pathOfConfig); os.IsNotExist(err) {
-		log.Fatalf(" There is no config file in %s", pathOfConfig)
+		log.Fatalf("there is no config file in %s", pathOfConfig)
 	}
 	var cfg Config
 	if err := cleanenv.ReadConfig(pathOfConfig, &cfg); err != nil {
-		log.Fatalf("Cannot read config: %s", err)
+		log.Fatalf("cannot read config: %s", err)
 	}
 	return &cfg
 }
