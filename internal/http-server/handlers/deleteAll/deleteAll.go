@@ -1,11 +1,12 @@
 package deleteAll
 
 import (
+	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
-	"restAPI/internal/http-server/response"
+	"restAPI/internal/repositories/tasks"
 )
 
 type AllDeleter interface {
@@ -23,10 +24,15 @@ func New(log *slog.Logger, allDeleter AllDeleter) http.HandlerFunc {
 				Key:   "error",
 				Value: slog.StringValue(err.Error()),
 			})
-			render.JSON(w, r, response.Error("failed to delete all tasks"))
+			if errors.Is(err, tasks.ErrEmptyTable) {
+				w.WriteHeader(http.StatusNotFound)
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			render.JSON(w, r, "failed to delete all tasks")
 			return
 		}
 		log.Info("all tasks deleted")
-		render.JSON(w, r, response.Ok())
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

@@ -7,14 +7,12 @@ import (
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
-	"restAPI/internal/http-server/response"
 	"restAPI/internal/model"
 	"restAPI/pkg/lib/verification"
 	"strconv"
 )
 
 type Response struct {
-	response.Response
 	Tasks []model.Task
 }
 
@@ -32,7 +30,8 @@ func New(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
 		day := chi.URLParam(r, "day")
 		if !verification.Date(day, month, year) {
 			log.Error(`incorrect data format`, slog.String("data", fmt.Sprintf("%s:%s:%s", day, month, year)))
-			render.JSON(w, r, response.Error("incorrect data format"))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, "incorrect data format")
 			return
 		}
 		dayInt, _ := strconv.Atoi(day)
@@ -45,13 +44,13 @@ func New(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
 				Key:   "error",
 				Value: slog.StringValue(err.Error()),
 			})
-			render.JSON(w, r, response.Error("couldn't find any data"))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, "couldn't find any data")
 			return
 		}
 		log.Info("tasks copied by data", slog.String("day", day), slog.String("month", month), slog.String("year", year))
 		render.JSON(w, r, Response{
-			Response: response.Ok(),
-			Tasks:    tasks,
+			Tasks: tasks,
 		})
 
 	}

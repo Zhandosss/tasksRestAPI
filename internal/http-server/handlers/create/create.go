@@ -5,7 +5,6 @@ import (
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
-	"restAPI/internal/http-server/response"
 	"time"
 )
 
@@ -15,7 +14,6 @@ type Request struct {
 }
 
 type Response struct {
-	response.Response
 	TaskId int64 `json:"task_id"`
 }
 
@@ -37,7 +35,8 @@ func New(log *slog.Logger, taskCreater TaskCreater) http.HandlerFunc {
 				Key:   "error",
 				Value: slog.StringValue(err.Error()),
 			})
-			render.JSON(w, r, response.Error("failed to decode request"))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, "failed to decode request")
 			return
 		}
 
@@ -49,13 +48,14 @@ func New(log *slog.Logger, taskCreater TaskCreater) http.HandlerFunc {
 				Key:   "error",
 				Value: slog.StringValue(err.Error()),
 			})
-			render.JSON(w, r, response.Error("failed to create task"))
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, "failed to create task")
 			return
 		}
 		log.Info("task created", slog.Int64("taskID", taskId))
+		w.WriteHeader(http.StatusCreated)
 		render.JSON(w, r, Response{
-			Response: response.Ok(),
-			TaskId:   taskId,
+			TaskId: taskId,
 		})
 
 	}

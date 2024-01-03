@@ -1,16 +1,16 @@
 package getAll
 
 import (
+	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
-	"restAPI/internal/http-server/response"
 	"restAPI/internal/model"
+	"restAPI/internal/repositories/tasks"
 )
 
 type Response struct {
-	response.Response
 	AllTasks []model.Task `json:"all_tasks"`
 }
 
@@ -29,12 +29,16 @@ func New(log *slog.Logger, allGetter AllGetter) http.HandlerFunc {
 				Key:   "error",
 				Value: slog.StringValue(err.Error()),
 			})
-			render.JSON(w, r, response.Error("failed to get all tasks"))
+			if errors.Is(err, tasks.ErrEmptyTable) {
+				w.WriteHeader(http.StatusNotFound)
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			render.JSON(w, r, "failed to get all tasks")
 			return
 		}
 		log.Info("all tasks was copied")
 		render.JSON(w, r, Response{
-			Response: response.Ok(),
 			AllTasks: ans,
 		})
 	}

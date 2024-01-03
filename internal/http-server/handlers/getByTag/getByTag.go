@@ -6,12 +6,10 @@ import (
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
-	"restAPI/internal/http-server/response"
 	"restAPI/internal/model"
 )
 
 type Response struct {
-	response.Response
 	Tasks []model.Task
 }
 
@@ -27,7 +25,8 @@ func New(log *slog.Logger, getterByTag GetterByTag) http.HandlerFunc {
 		tag := chi.URLParam(r, "tag")
 		if tag == "" {
 			log.Error("there is no tag")
-			render.JSON(w, r, response.Error("there is no tag"))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, "there is no tag")
 			return
 		}
 		tasks, err := getterByTag.GetTasksByTag(tag)
@@ -36,13 +35,13 @@ func New(log *slog.Logger, getterByTag GetterByTag) http.HandlerFunc {
 				Key:   "error",
 				Value: slog.StringValue(err.Error()),
 			})
-			render.JSON(w, r, response.Error(err.Error()))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, "couldn't find any data")
 			return
 		}
 		log.Info("tasks copied by tag", slog.String("tag", tag))
 		render.JSON(w, r, Response{
-			Response: response.Ok(),
-			Tasks:    tasks,
+			Tasks: tasks,
 		})
 	}
 

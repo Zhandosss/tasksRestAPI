@@ -6,13 +6,11 @@ import (
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
-	"restAPI/internal/http-server/response"
 	"restAPI/internal/model"
 	"strconv"
 )
 
 type Response struct {
-	response.Response
 	Task model.Task `json:"task"`
 }
 
@@ -28,7 +26,8 @@ func New(log *slog.Logger, taskGetter TaskGetter) http.HandlerFunc {
 		taskIdString := chi.URLParam(r, "taskId")
 		if taskIdString == "" {
 			log.Error("failed to get task id from url")
-			render.JSON(w, r, response.Error("failed to get task id from url"))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, "failed to get task id from url")
 			return
 		}
 		taskId, err := strconv.Atoi(taskIdString)
@@ -37,7 +36,8 @@ func New(log *slog.Logger, taskGetter TaskGetter) http.HandlerFunc {
 				Key:   "error",
 				Value: slog.StringValue(err.Error()),
 			})
-			render.JSON(w, r, response.Error("incorrect task id record"))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, "incorrect task id record")
 			return
 		}
 		task, err := taskGetter.GetTask(int64(taskId))
@@ -46,13 +46,13 @@ func New(log *slog.Logger, taskGetter TaskGetter) http.HandlerFunc {
 				Key:   "error",
 				Value: slog.StringValue(err.Error()),
 			})
-			render.JSON(w, r, response.Error("can't found task"))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, "can't found task")
 			return
 		}
 		log.Info("task copied by id", slog.Int("id", taskId))
 		render.JSON(w, r, Response{
-			Response: response.Ok(),
-			Task:     task,
+			Task: task,
 		})
 	}
 }

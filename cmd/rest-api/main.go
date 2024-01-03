@@ -42,15 +42,25 @@ func main() {
 
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
 
-	router.Post("/task", create.New(log, storage))
-	router.Get("/task", getAll.New(log, storage))
-	router.Get("/task/{taskId}", getById.New(log, storage))
-	router.Delete("/task", deleteAll.New(log, storage))
-	router.Delete("/task/{taskId}", deleteById.New(log, storage))
-	router.Get("/tag/{tag}", getByTag.New(log, storage))
-	router.Get("/due-date/{year}/{month}/{day}", getByDate.New(log, storage))
+	router.Route("/tasks", func(router chi.Router) {
+		router.Get("/", getAll.New(log, storage))
+		router.Delete("/", deleteAll.New(log, storage))
+	})
+	router.Route("/task", func(router chi.Router) {
+		router.Post("/", create.New(log, storage))
+		router.Get("/{taskId}", getById.New(log, storage))
+		router.Delete("/{taskId}", deleteById.New(log, storage))
+	})
+	router.Route("/tag", func(router chi.Router) {
+		router.Get("/{tag}", getByTag.New(log, storage))
+	})
+	router.Route("/due-date", func(router chi.Router) {
+		router.Get("/{year}/{month}/{day}", getByDate.New(log, storage))
 
+	})
 	log.Info("starting server", slog.String("address", cfg.Address))
 
 	server := &http.Server{
