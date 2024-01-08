@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"restAPI/internal/model"
-	"restAPI/internal/repositories/tasks"
+	"restAPI/internal/repositories"
 )
 
 type Response struct {
@@ -29,7 +29,7 @@ func New(log *slog.Logger, allGetter AllGetter) http.HandlerFunc {
 				Key:   "error",
 				Value: slog.StringValue(err.Error()),
 			})
-			if errors.Is(err, tasks.ErrEmptyTable) {
+			if errors.Is(err, repositories.ErrEmptyTable) {
 				w.WriteHeader(http.StatusNotFound)
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)

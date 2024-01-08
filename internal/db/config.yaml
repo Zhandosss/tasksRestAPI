@@ -1,2 +1,0 @@
-conn_type: "string"
-conn_string: "postgresql://jandosss1:y4IDCHalWp2K@ep-wild-bonus-53346710.eu-central-1.aws.neon.tech/tasks?sslmode=require"

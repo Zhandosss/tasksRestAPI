@@ -21,3 +21,5 @@
 go.work
 
 *.http
+
+.env

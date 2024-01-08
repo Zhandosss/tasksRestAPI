@@ -17,7 +17,7 @@ type Response struct {
 }
 
 type GetterByDue interface {
-	GetTasksByDate(day, month, year int) ([]model.Task, error)
+	GetTasksByDate(day, month, year int, userID int64) ([]model.Task, error)
 }
 
 func New(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
@@ -25,6 +25,16 @@ func New(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
 		)
+
+		userID := r.Context().Value("userID").(int64)
+
+		if userID == 0 {
+			log.Error("couldn't get userID")
+			w.WriteHeader(http.StatusUnauthorized)
+			render.JSON(w, r, "failed to get user id")
+			return
+		}
+
 		year := chi.URLParam(r, "year")
 		month := chi.URLParam(r, "month")
 		day := chi.URLParam(r, "day")
@@ -38,7 +48,7 @@ func New(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
 		monthInt, _ := strconv.Atoi(month)
 		yearInt, _ := strconv.Atoi(year)
 
-		tasks, err := getterByDue.GetTasksByDate(dayInt, monthInt, yearInt)
+		tasks, err := getterByDue.GetTasksByDate(dayInt, monthInt, yearInt, userID)
 		if err != nil {
 			log.Error("get tasks by date", slog.Attr{
 				Key:   "error",

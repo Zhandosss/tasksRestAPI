@@ -10,7 +10,7 @@ import (
 )
 
 type TaskDeleter interface {
-	DeleteTask(taskID int64) error
+	DeleteTask(taskID, userID int64) error
 }
 
 func New(log *slog.Logger, deleter TaskDeleter) http.HandlerFunc {
@@ -18,6 +18,16 @@ func New(log *slog.Logger, deleter TaskDeleter) http.HandlerFunc {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
 		)
+
+		userID := r.Context().Value("userID").(int64)
+
+		if userID == 0 {
+			log.Error("couldn't get userID")
+			w.WriteHeader(http.StatusUnauthorized)
+			render.JSON(w, r, "failed to get user id")
+			return
+		}
+
 		taskIdString := chi.URLParam(r, "taskId")
 		if taskIdString == "" {
 			log.Error("failed to get task id from url")
@@ -35,7 +45,7 @@ func New(log *slog.Logger, deleter TaskDeleter) http.HandlerFunc {
 			render.JSON(w, r, "incorrect task id record")
 			return
 		}
-		err = deleter.DeleteTask(int64(taskId))
+		err = deleter.DeleteTask(int64(taskId), userID)
 		if err != nil {
 			log.Error("can't found task", slog.Attr{
 				Key:   "error",

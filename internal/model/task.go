@@ -6,10 +6,11 @@ import (
 )
 
 type Task struct {
-	ID   int64     `json:"id" db:"task_id"`
-	Text string    `json:"text" db:"task"`
-	Tags []string  `json:"tags" db:"omitempty"`
-	Date time.Time `json:"due" db:"date"`
+	ID      int64     `json:"id,omitempty" db:"task_id"`
+	Text    string    `json:"text" db:"task"`
+	Tags    []string  `json:"tags" db:"omitempty"`
+	Date    time.Time `json:"due" db:"date"`
+	OwnerID int64     `json:"owner_id" db:"owner_id"`
 }
 
 func (task *Task) String() string {

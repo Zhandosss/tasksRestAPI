@@ -14,7 +14,7 @@ type Response struct {
 }
 
 type GetterByTag interface {
-	GetTasksByTag(tag string) ([]model.Task, error)
+	GetTasksByTag(tag string, userID int64) ([]model.Task, error)
 }
 
 func New(log *slog.Logger, getterByTag GetterByTag) http.HandlerFunc {
@@ -22,6 +22,16 @@ func New(log *slog.Logger, getterByTag GetterByTag) http.HandlerFunc {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
 		)
+
+		userID := r.Context().Value("userID").(int64)
+
+		if userID == 0 {
+			log.Error("couldn't get userID")
+			w.WriteHeader(http.StatusUnauthorized)
+			render.JSON(w, r, "failed to get user id")
+			return
+		}
+
 		tag := chi.URLParam(r, "tag")
 		if tag == "" {
 			log.Error("there is no tag")
@@ -29,7 +39,7 @@ func New(log *slog.Logger, getterByTag GetterByTag) http.HandlerFunc {
 			render.JSON(w, r, "there is no tag")
 			return
 		}
-		tasks, err := getterByTag.GetTasksByTag(tag)
+		tasks, err := getterByTag.GetTasksByTag(tag, userID)
 		if err != nil {
 			log.Error("getByTag", slog.Attr{
 				Key:   "error",

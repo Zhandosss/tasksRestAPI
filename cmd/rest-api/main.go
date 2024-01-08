@@ -6,17 +6,20 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log/slog"
 	"net/http"
-	"restAPI/internal/http-server/handlers/create"
-	"restAPI/internal/http-server/handlers/deleteAll"
-	"restAPI/internal/http-server/handlers/deleteById"
-	"restAPI/internal/http-server/handlers/getAll"
-	"restAPI/internal/http-server/handlers/getByDate"
-	"restAPI/internal/http-server/handlers/getById"
-	"restAPI/internal/http-server/handlers/getByTag"
-	"restAPI/internal/repositories/tasks"
-
 	"restAPI/internal/config"
-	"restAPI/internal/db/postgres"
+	"restAPI/internal/db"
+	"restAPI/internal/http-server/handlers/due-date/getByDate"
+	"restAPI/internal/http-server/handlers/tag/getByTag"
+	"restAPI/internal/http-server/handlers/task/create"
+	"restAPI/internal/http-server/handlers/task/deleteAll"
+	"restAPI/internal/http-server/handlers/task/deleteById"
+	"restAPI/internal/http-server/handlers/task/getAll"
+	"restAPI/internal/http-server/handlers/task/getById"
+	"restAPI/internal/http-server/handlers/user/signin"
+	"restAPI/internal/http-server/handlers/user/signup"
+	jwtAuth "restAPI/internal/http-server/middleware/JWTAuth"
+	"restAPI/internal/repositories"
+	"restAPI/internal/service"
 	"restAPI/pkg/logger"
 )
 
@@ -29,14 +32,15 @@ func main() {
 	log.Debug("debug is enabled")
 	log.Debug("config value:", cfg)
 
-	storageCfg := postgres.NewConfig(log)
-	log.Debug("storage config value:", storageCfg)
-	conn, err := postgres.New(storageCfg)
-	defer closeConn(conn)
+	conn, err := db.New(&cfg.DB)
 	if err != nil {
-		log.Error("cannot create ")
+		log.Error("cannot create connection", slog.String("error", err.Error()))
 	}
-	storage := tasks.NewRepository(conn, log)
+	defer closeConn(conn)
+
+	rep := repositories.New(conn, log)
+
+	services := service.New(rep)
 
 	router := chi.NewRouter()
 
@@ -45,22 +49,38 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	router.Route("/tasks", func(router chi.Router) {
-		router.Get("/", getAll.New(log, storage))
-		router.Delete("/", deleteAll.New(log, storage))
+	router.Route("/auth", func(router chi.Router) {
+		router.Post("/sign-up", signup.New(log, services))
+		router.Post("/sign-in", signin.New(log, services))
 	})
-	router.Route("/task", func(router chi.Router) {
-		router.Post("/", create.New(log, storage))
-		router.Get("/{taskId}", getById.New(log, storage))
-		router.Delete("/{taskId}", deleteById.New(log, storage))
-	})
-	router.Route("/tag", func(router chi.Router) {
-		router.Get("/{tag}", getByTag.New(log, storage))
-	})
-	router.Route("/due-date", func(router chi.Router) {
-		router.Get("/{year}/{month}/{day}", getByDate.New(log, storage))
 
+	router.Group(func(router chi.Router) {
+		router.Route("/tasks", func(router chi.Router) {
+			router.Use(middleware.BasicAuth("restAPI", map[string]string{
+				cfg.Admin.Login: cfg.Admin.Password,
+			}))
+			router.Delete("/", deleteAll.New(log, services))
+			router.Get("/", getAll.New(log, services))
+
+		})
 	})
+
+	router.Group(func(router chi.Router) {
+		router.Use(jwtAuth.New(log, services))
+		router.Route("/tasks", func(router chi.Router) {
+			router.Post("/", create.New(log, services))
+			router.Get("/{taskId}", getById.New(log, services))
+			router.Delete("/{taskId}", deleteById.New(log, services))
+		})
+		router.Route("/tag", func(router chi.Router) {
+			router.Get("/{tag}", getByTag.New(log, services))
+		})
+		router.Route("/due-date", func(router chi.Router) {
+			router.Get("/{year}/{month}/{day}", getByDate.New(log, services))
+
+		})
+	})
+
 	log.Info("starting server", slog.String("address", cfg.Address))
 
 	server := &http.Server{

@@ -18,7 +18,7 @@ type Response struct {
 }
 
 type TaskCreater interface {
-	CreateTask(text string, tags []string, date time.Time) (int64, error)
+	CreateTask(text string, tags []string, date time.Time, ownerID int64) (int64, error)
 }
 
 func New(log *slog.Logger, taskCreater TaskCreater) http.HandlerFunc {
@@ -28,6 +28,15 @@ func New(log *slog.Logger, taskCreater TaskCreater) http.HandlerFunc {
 		)
 
 		var req Request
+
+		userID := r.Context().Value("userID").(int64)
+
+		if userID == 0 {
+			log.Error("couldn't get userID")
+			w.WriteHeader(http.StatusUnauthorized)
+			render.JSON(w, r, "failed to get user id")
+			return
+		}
 
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
@@ -42,7 +51,7 @@ func New(log *slog.Logger, taskCreater TaskCreater) http.HandlerFunc {
 
 		log.Info("request body decoded", slog.Any("request", req))
 
-		taskId, err := taskCreater.CreateTask(req.Text, req.Tags, time.Now())
+		taskId, err := taskCreater.CreateTask(req.Text, req.Tags, time.Now(), userID)
 		if err != nil {
 			log.Error("failed to create task:", slog.Attr{
 				Key:   "error",

@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"time"
@@ -9,7 +10,22 @@ import (
 
 type Config struct {
 	Env        string `yaml:"env"`
+	Admin      `yaml:"admin"`
 	HTTPServer `yaml:"http_server"`
+	DB         `yaml:"db"`
+}
+
+type Admin struct {
+	Login    string `yaml:"login"`
+	Password string
+}
+
+type DB struct {
+	Host     string `yaml:"host"`
+	Port     string `yaml:"port"`
+	Name     string `yaml:"name"`
+	User     string `yaml:"user"`
+	Password string
 }
 
 type HTTPServer struct {
@@ -27,5 +43,11 @@ func New() *Config {
 	if err := cleanenv.ReadConfig(pathOfConfig, &cfg); err != nil {
 		log.Fatalf("cannot read config: %s", err)
 	}
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("cannot load passwords %s", err)
+	}
+	cfg.Admin.Password = os.Getenv("ADMIN_PASSWORD")
+	cfg.DB.Password = os.Getenv("DB_PASSWORD")
 	return &cfg
 }

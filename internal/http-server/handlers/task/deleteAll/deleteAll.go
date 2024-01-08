@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
-	"restAPI/internal/repositories/tasks"
+	"restAPI/internal/repositories"
 )
 
 type AllDeleter interface {
@@ -18,13 +18,14 @@ func New(log *slog.Logger, allDeleter AllDeleter) http.HandlerFunc {
 		log := log.With(
 			slog.String("request", middleware.GetReqID(r.Context())),
 		)
+
 		err := allDeleter.DeleteAllTasks()
 		if err != nil {
 			log.Error("failed to delete all tasks", slog.Attr{
 				Key:   "error",
 				Value: slog.StringValue(err.Error()),
 			})
-			if errors.Is(err, tasks.ErrEmptyTable) {
+			if errors.Is(err, repositories.ErrEmptyTable) {
 				w.WriteHeader(http.StatusNotFound)
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)
