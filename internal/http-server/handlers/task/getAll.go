@@ -1,4 +1,4 @@
-package getAll
+package get_all
 
 import (
 	"errors"

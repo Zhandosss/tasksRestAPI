@@ -41,7 +41,7 @@ func New(log *slog.Logger, getterByTag GetterByTag) http.HandlerFunc {
 		}
 		tasks, err := getterByTag.GetTasksByTag(tag, userID)
 		if err != nil {
-			log.Error("getByTag", slog.Attr{
+			log.Error("get-by-tag", slog.Attr{
 				Key:   "error",
 				Value: slog.StringValue(err.Error()),
 			})

@@ -1,4 +1,4 @@
-package getByDate
+package due_date
 
 import (
 	"fmt"
