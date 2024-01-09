@@ -1,4 +1,4 @@
-package getById
+package task
 
 import (
 	"github.com/go-chi/chi/v5"
@@ -10,15 +10,15 @@ import (
 	"strconv"
 )
 
-type Response struct {
+type GetTaskResponse struct {
 	Task model.Task `json:"task"`
 }
 
-type TaskGetter interface {
+type Getter interface {
 	GetTask(taskID, UserID int64) (model.Task, error)
 }
 
-func New(log *slog.Logger, taskGetter TaskGetter) http.HandlerFunc {
+func Get(log *slog.Logger, taskGetter Getter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
@@ -61,7 +61,7 @@ func New(log *slog.Logger, taskGetter TaskGetter) http.HandlerFunc {
 			return
 		}
 		log.Info("task copied by id", slog.Int("id", taskId))
-		render.JSON(w, r, Response{
+		render.JSON(w, r, GetTaskResponse{
 			Task: task,
 		})
 	}

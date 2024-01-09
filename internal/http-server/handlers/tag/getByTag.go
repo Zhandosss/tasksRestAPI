@@ -1,4 +1,4 @@
-package getByTag
+package tag
 
 import (
 	"github.com/go-chi/chi/v5"
@@ -17,7 +17,7 @@ type GetterByTag interface {
 	GetTasksByTag(tag string, userID int64) ([]model.Task, error)
 }
 
-func New(log *slog.Logger, getterByTag GetterByTag) http.HandlerFunc {
+func Get(log *slog.Logger, getterByTag GetterByTag) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),

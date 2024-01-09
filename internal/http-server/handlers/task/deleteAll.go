@@ -1,4 +1,4 @@
-package deleteAll
+package task
 
 import (
 	"errors"
@@ -13,7 +13,7 @@ type AllDeleter interface {
 	DeleteAllTasks() error
 }
 
-func New(log *slog.Logger, allDeleter AllDeleter) http.HandlerFunc {
+func DeleteAll(log *slog.Logger, allDeleter AllDeleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("request", middleware.GetReqID(r.Context())),

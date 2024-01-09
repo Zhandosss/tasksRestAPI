@@ -1,4 +1,4 @@
-package due_date
+package date
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ type GetterByDue interface {
 	GetTasksByDate(day, month, year int, userID int64) ([]model.Task, error)
 }
 
-func New(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
+func Get(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),

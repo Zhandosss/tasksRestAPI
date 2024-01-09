@@ -1,4 +1,4 @@
-package deleteById
+package task
 
 import (
 	"github.com/go-chi/chi/v5"
@@ -9,11 +9,11 @@ import (
 	"strconv"
 )
 
-type TaskDeleter interface {
+type Deleter interface {
 	DeleteTask(taskID, userID int64) error
 }
 
-func New(log *slog.Logger, deleter TaskDeleter) http.HandlerFunc {
+func Delete(log *slog.Logger, deleter Deleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),

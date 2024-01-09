@@ -1,4 +1,4 @@
-package create
+package task
 
 import (
 	"github.com/go-chi/chi/v5/middleware"
@@ -13,15 +13,15 @@ type Request struct {
 	Tags []string `json:"tags"`
 }
 
-type Response struct {
+type CreateResponse struct {
 	TaskId int64 `json:"task_id"`
 }
 
-type TaskCreater interface {
+type Creater interface {
 	CreateTask(text string, tags []string, date time.Time, ownerID int64) (int64, error)
 }
 
-func New(log *slog.Logger, taskCreater TaskCreater) http.HandlerFunc {
+func Create(log *slog.Logger, creater Creater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
@@ -51,7 +51,7 @@ func New(log *slog.Logger, taskCreater TaskCreater) http.HandlerFunc {
 
 		log.Info("request body decoded", slog.Any("request", req))
 
-		taskId, err := taskCreater.CreateTask(req.Text, req.Tags, time.Now(), userID)
+		taskId, err := creater.CreateTask(req.Text, req.Tags, time.Now(), userID)
 		if err != nil {
 			log.Error("failed to create task:", slog.Attr{
 				Key:   "error",
@@ -63,7 +63,7 @@ func New(log *slog.Logger, taskCreater TaskCreater) http.HandlerFunc {
 		}
 		log.Info("task created", slog.Int64("taskID", taskId))
 		w.WriteHeader(http.StatusCreated)
-		render.JSON(w, r, Response{
+		render.JSON(w, r, CreateResponse{
 			TaskId: taskId,
 		})
 

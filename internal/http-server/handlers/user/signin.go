@@ -1,4 +1,4 @@
-package signin
+package user
 
 import (
 	"github.com/go-chi/chi/v5/middleware"
@@ -7,12 +7,12 @@ import (
 	"net/http"
 )
 
-type Request struct {
+type SignInRequest struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }
 
-type Response struct {
+type SignInResponse struct {
 	Token string `json:"token"`
 }
 
@@ -20,12 +20,12 @@ type tokenGenerator interface {
 	GenerateToken(login, password string) (string, error)
 }
 
-func New(log *slog.Logger, generator tokenGenerator) http.HandlerFunc {
+func SignIn(log *slog.Logger, generator tokenGenerator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
 		)
-		var req Request
+		var req SignInRequest
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
 			log.Error("failed to decode request body", slog.String("error", err.Error()))
@@ -42,7 +42,7 @@ func New(log *slog.Logger, generator tokenGenerator) http.HandlerFunc {
 		}
 		log.Info("token created")
 		w.WriteHeader(http.StatusCreated)
-		render.JSON(w, r, Response{
+		render.JSON(w, r, SignInResponse{
 			Token: token,
 		})
 	}

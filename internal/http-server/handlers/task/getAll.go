@@ -1,4 +1,4 @@
-package get_all
+package task
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 	"restAPI/internal/repositories"
 )
 
-type Response struct {
+type GetAllResponse struct {
 	AllTasks []model.Task `json:"all_tasks"`
 }
 
@@ -18,7 +18,7 @@ type AllGetter interface {
 	GetAllTasks() ([]model.Task, error)
 }
 
-func New(log *slog.Logger, allGetter AllGetter) http.HandlerFunc {
+func GetAll(log *slog.Logger, allGetter AllGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
@@ -38,7 +38,7 @@ func New(log *slog.Logger, allGetter AllGetter) http.HandlerFunc {
 			return
 		}
 		log.Info("all tasks was copied")
-		render.JSON(w, r, Response{
+		render.JSON(w, r, GetAllResponse{
 			AllTasks: ans,
 		})
 	}

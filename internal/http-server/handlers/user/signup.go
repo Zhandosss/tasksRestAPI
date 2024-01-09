@@ -1,4 +1,4 @@
-package signup
+package user
 
 import (
 	"github.com/go-chi/chi/v5/middleware"
@@ -8,24 +8,24 @@ import (
 	"restAPI/internal/model"
 )
 
-type Request struct {
+type SignUpRequest struct {
 	model.User
 }
 
-type Response struct {
+type SignUpResponse struct {
 	UserID int64 `json:"user_id"`
 }
 
-type userCreater interface {
+type Creater interface {
 	CreateUser(user model.User) (int64, error)
 }
 
-func New(log *slog.Logger, creater userCreater) http.HandlerFunc {
+func SignUp(log *slog.Logger, creater Creater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
 		)
-		var req Request
+		var req SignUpRequest
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
 			log.Error("failed to decode request body", slog.Attr{
@@ -51,7 +51,7 @@ func New(log *slog.Logger, creater userCreater) http.HandlerFunc {
 		}
 		log.Info("user created", slog.Int64("userID", userId))
 		w.WriteHeader(http.StatusCreated)
-		render.JSON(w, r, Response{
+		render.JSON(w, r, SignUpResponse{
 			UserID: userId,
 		})
 	}
