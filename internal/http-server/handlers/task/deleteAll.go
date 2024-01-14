@@ -1,39 +1,48 @@
 package task
 
 import (
-	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
-	"restAPI/internal/repositories"
+	"restAPI/internal/http-server/response"
 )
 
 type AllDeleter interface {
-	DeleteAllTasks() error
+	DeleteAllByUser(userID int64) error
 }
 
-func DeleteAll(log *slog.Logger, allDeleter AllDeleter) http.HandlerFunc {
+func DeleteAll(log *slog.Logger, deleter AllDeleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
-			slog.String("request", middleware.GetReqID(r.Context())),
+			slog.String("requestID", middleware.GetReqID(r.Context())),
 		)
 
-		err := allDeleter.DeleteAllTasks()
-		if err != nil {
-			log.Error("failed to delete all tasks", slog.Attr{
-				Key:   "error",
-				Value: slog.StringValue(err.Error()),
+		userID := r.Context().Value("userID").(int64)
+
+		if userID <= 0 {
+			log.Error("couldn't get userID")
+			w.WriteHeader(http.StatusForbidden)
+			render.JSON(w, r, response.Message{
+				Msg: "failed to get auth id",
 			})
-			if errors.Is(err, repositories.ErrEmptyTable) {
-				w.WriteHeader(http.StatusNotFound)
-			} else {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-			render.JSON(w, r, "failed to delete all tasks")
 			return
 		}
-		log.Info("all tasks deleted")
-		w.WriteHeader(http.StatusNoContent)
+
+		err := deleter.DeleteAllByUser(userID)
+
+		if err != nil {
+			log.Error("couldn't delete all tasks by this user", slog.String("error", err.Error()))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, response.Message{
+				Msg: "couldn't delete all task",
+			})
+			return
+		}
+
+		log.Info("all user tasks deleted", slog.Int64("userID", userID))
+		render.JSON(w, r, response.Message{
+			Msg: "all tasks deleted",
+		})
 	}
 }

@@ -7,23 +7,25 @@ import (
 	"log/slog"
 	"net/http"
 	"restAPI/internal/http-server/response"
-	"restAPI/internal/model"
 	"strconv"
 )
 
-type GetTaskResponse struct {
-	Task model.Task `json:"task"`
+type UpdateRequest struct {
+	Text string   `json:"text"`
+	Tags []string `json:"tags"`
 }
 
-type Getter interface {
-	GetTask(taskID, UserID int64) (model.Task, error)
+type Updater interface {
+	UpdateTask(taskID, userID int64, Text string, Tags []string) error
 }
 
-func Get(log *slog.Logger, taskGetter Getter) http.HandlerFunc {
+func Update(log *slog.Logger, updater Updater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
 		)
+
+		var req UpdateRequest
 
 		userID := r.Context().Value("userID").(int64)
 
@@ -32,6 +34,25 @@ func Get(log *slog.Logger, taskGetter Getter) http.HandlerFunc {
 			w.WriteHeader(http.StatusForbidden)
 			render.JSON(w, r, response.Message{
 				Msg: "failed to get auth id",
+			})
+			return
+		}
+
+		err := render.DecodeJSON(r.Body, &req)
+		if err != nil {
+			log.Error("failed to decode request body", slog.String("error", err.Error()))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, response.Message{
+				Msg: "failed to decode request",
+			})
+			return
+		}
+
+		if req.Text == "" {
+			log.Error("there is no text in updated version")
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, response.Message{
+				Msg: "there is no text in task",
 			})
 			return
 		}
@@ -45,7 +66,7 @@ func Get(log *slog.Logger, taskGetter Getter) http.HandlerFunc {
 			})
 			return
 		}
-		taskId, err := strconv.Atoi(taskIdString)
+		taskID, err := strconv.Atoi(taskIdString)
 		if err != nil {
 			log.Error("incorrect task id record", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusBadRequest)
@@ -54,18 +75,20 @@ func Get(log *slog.Logger, taskGetter Getter) http.HandlerFunc {
 			})
 			return
 		}
-		task, err := taskGetter.GetTask(int64(taskId), userID)
+		log.Info("request body decoded", slog.Any("request", req))
+		err = updater.UpdateTask(int64(taskID), userID, req.Text, req.Tags)
+
 		if err != nil {
-			log.Error("can't found task", slog.String("error", err.Error()))
+			log.Error("can't update task", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusNotFound)
 			render.JSON(w, r, response.Message{
-				Msg: "can't found task",
+				Msg: "can't update task",
 			})
 			return
 		}
-		log.Info("task copied by id", slog.Int("id", taskId))
-		render.JSON(w, r, GetTaskResponse{
-			Task: task,
+		log.Info("task updated")
+		render.JSON(w, r, response.Message{
+			Msg: "task updated",
 		})
 	}
 }

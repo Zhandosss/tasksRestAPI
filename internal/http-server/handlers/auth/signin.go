@@ -1,10 +1,12 @@
-package user
+package auth
 
 import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
+	"restAPI/internal/http-server/response"
+	"restAPI/pkg/lib/verification"
 )
 
 type SignInRequest struct {
@@ -25,21 +27,39 @@ func SignIn(log *slog.Logger, generator tokenGenerator) http.HandlerFunc {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
 		)
+		//request decoding
 		var req SignInRequest
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
 			log.Error("failed to decode request body", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusBadRequest)
-			render.JSON(w, r, "failed to decode request")
+			render.JSON(w, r, response.Message{
+				Msg: "failed to decode request",
+			})
+			return
+		}
+
+		//login and password verification
+		if !verification.LoginAndPassword(req.Login, req.Password) {
+			log.Error("wrong json fields")
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, response.Message{
+				Msg: "wrong json fields",
+			})
 			return
 		}
 		log.Info("request body decoded", slog.Any("request", req))
+		//token generation
 		token, err := generator.GenerateToken(req.Login, req.Password)
 		if err != nil {
 			log.Error("generating token error", slog.String("error", err.Error()))
-			w.WriteHeader(http.StatusBadRequest)
-			render.JSON(w, r, "failed to login")
+			w.WriteHeader(http.StatusInternalServerError)
+			render.JSON(w, r, response.Message{
+				Msg: "failed to login",
+			})
+			return
 		}
+		//sending success response to client
 		log.Info("token created")
 		w.WriteHeader(http.StatusCreated)
 		render.JSON(w, r, SignInResponse{

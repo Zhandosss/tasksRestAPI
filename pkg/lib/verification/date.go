@@ -5,10 +5,10 @@ import "strconv"
 func Date(day, month, year string) bool {
 	var (
 		thirtyDayMonth = map[string]struct{}{
-			"4":  struct{}{},
-			"6":  struct{}{},
-			"9":  struct{}{},
-			"11": struct{}{},
+			"4":  {},
+			"6":  {},
+			"9":  {},
+			"11": {},
 		}
 	)
 	if !monthVer(month) || !yearVer(year) {

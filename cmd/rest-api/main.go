@@ -8,14 +8,16 @@ import (
 	"net/http"
 	"restAPI/internal/config"
 	"restAPI/internal/db"
+	"restAPI/internal/http-server/handlers/admin"
+	"restAPI/internal/http-server/handlers/auth"
 	"restAPI/internal/http-server/handlers/date"
 	"restAPI/internal/http-server/handlers/tag"
 	"restAPI/internal/http-server/handlers/task"
-	"restAPI/internal/http-server/handlers/user"
 	jwtAuth "restAPI/internal/http-server/middleware/JWTAuth"
 	"restAPI/internal/repositories"
 	"restAPI/internal/service"
 	"restAPI/pkg/logger"
+	"time"
 )
 
 func main() {
@@ -45,27 +47,30 @@ func main() {
 	router.Use(middleware.URLFormat)
 
 	router.Route("/auth", func(router chi.Router) {
-		router.Post("/sign-up", user.SignUp(log, services))
-		router.Post("/sign-in", user.SignIn(log, services))
+		router.Post("/sign-up", auth.SignUp(log, services))
+		router.Post("/sign-in", auth.SignIn(log, services))
 	})
 
 	router.Group(func(router chi.Router) {
-		router.Route("/tasks", func(router chi.Router) {
+		router.Route("/admin", func(router chi.Router) {
 			router.Use(middleware.BasicAuth("restAPI", map[string]string{
 				cfg.Admin.Login: cfg.Admin.Password,
 			}))
-			router.Delete("/", task.DeleteAll(log, services))
-			router.Get("/", task.GetAll(log, services))
-
+			router.Delete("/", admin.DeleteAll(log, services))
+			router.Get("/", admin.GetAll(log, services))
 		})
 	})
 
 	router.Group(func(router chi.Router) {
 		router.Use(jwtAuth.New(log, services))
+
 		router.Route("/tasks", func(router chi.Router) {
-			router.Post("/", task.Create(log, services))
+			router.Post("/", task.Create(log, services, time.Now()))
 			router.Get("/{taskId}", task.Get(log, services))
+			router.Get("/", task.GetAll(log, services))
 			router.Delete("/{taskId}", task.Delete(log, services))
+			router.Delete("/", task.DeleteAll(log, services))
+			router.Put("/{taskId}", task.Update(log, services))
 		})
 		router.Route("/tag", func(router chi.Router) {
 			router.Get("/{tag}", tag.Get(log, services))

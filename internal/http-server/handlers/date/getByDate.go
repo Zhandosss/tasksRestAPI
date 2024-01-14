@@ -7,13 +7,14 @@ import (
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
+	"restAPI/internal/http-server/response"
 	"restAPI/internal/model"
 	"restAPI/pkg/lib/verification"
 	"strconv"
 )
 
 type Response struct {
-	Tasks []model.Task
+	Tasks []model.Task `json:"tasks"`
 }
 
 type GetterByDue interface {
@@ -28,10 +29,12 @@ func Get(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
 
 		userID := r.Context().Value("userID").(int64)
 
-		if userID == 0 {
+		if userID <= 0 {
 			log.Error("couldn't get userID")
-			w.WriteHeader(http.StatusUnauthorized)
-			render.JSON(w, r, "failed to get user id")
+			w.WriteHeader(http.StatusForbidden)
+			render.JSON(w, r, response.Message{
+				Msg: "failed to get auth id",
+			})
 			return
 		}
 
@@ -41,7 +44,9 @@ func Get(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
 		if !verification.Date(day, month, year) {
 			log.Error(`incorrect data format`, slog.String("data", fmt.Sprintf("%s:%s:%s", day, month, year)))
 			w.WriteHeader(http.StatusBadRequest)
-			render.JSON(w, r, "incorrect data format")
+			render.JSON(w, r, response.Message{
+				Msg: "incorrect data format",
+			})
 			return
 		}
 		dayInt, _ := strconv.Atoi(day)
@@ -50,12 +55,11 @@ func Get(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
 
 		tasks, err := getterByDue.GetTasksByDate(dayInt, monthInt, yearInt, userID)
 		if err != nil {
-			log.Error("get tasks by date", slog.Attr{
-				Key:   "error",
-				Value: slog.StringValue(err.Error()),
-			})
+			log.Error("get tasks by date", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusNotFound)
-			render.JSON(w, r, "couldn't find any data")
+			render.JSON(w, r, response.Message{
+				Msg: "couldn't find any tasks by date",
+			})
 			return
 		}
 		log.Info("tasks copied by data", slog.String("day", day), slog.String("month", month), slog.String("year", year))

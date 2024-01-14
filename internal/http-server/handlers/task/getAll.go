@@ -1,46 +1,52 @@
 package task
 
 import (
-	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
+	"restAPI/internal/http-server/response"
 	"restAPI/internal/model"
-	"restAPI/internal/repositories"
 )
 
 type GetAllResponse struct {
-	AllTasks []model.Task `json:"all_tasks"`
+	Tasks []model.Task `json:"tasks"`
 }
 
-type AllGetter interface {
-	GetAllTasks() ([]model.Task, error)
+type AllGetterByUser interface {
+	GetAllByUser(userID int64) ([]model.Task, error)
 }
 
-func GetAll(log *slog.Logger, allGetter AllGetter) http.HandlerFunc {
+func GetAll(log *slog.Logger, getter AllGetterByUser) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
 		)
-		ans, err := allGetter.GetAllTasks()
-		if err != nil {
-			log.Error("failed to get all tasks", slog.Attr{
-				Key:   "error",
-				Value: slog.StringValue(err.Error()),
+
+		userID := r.Context().Value("userID").(int64)
+
+		if userID <= 0 {
+			log.Error("couldn't get userID")
+			w.WriteHeader(http.StatusForbidden)
+			render.JSON(w, r, response.Message{
+				Msg: "failed to get auth id",
 			})
-			if errors.Is(err, repositories.ErrEmptyTable) {
-				w.WriteHeader(http.StatusNotFound)
-			} else {
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-			render.JSON(w, r, "failed to get all tasks")
 			return
 		}
-		log.Info("all tasks was copied")
+
+		tasks, err := getter.GetAllByUser(userID)
+		if err != nil {
+			log.Error("couldn't get all tasks by this user", slog.String("error", err.Error()))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, response.Message{
+				Msg: "couldn't get all task",
+			})
+			return
+		}
+
+		log.Info("all user tasks copied", slog.Int64("userID", userID))
 		render.JSON(w, r, GetAllResponse{
-			AllTasks: ans,
+			Tasks: tasks,
 		})
 	}
-
 }

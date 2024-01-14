@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"restAPI/internal/model"
 	"restAPI/internal/repositories"
-	"time"
 )
 
 type TaskService struct {
@@ -17,8 +16,8 @@ func NewTaskService(rep repositories.Task) *TaskService {
 	}
 }
 
-func (s *TaskService) CreateTask(text string, tags []string, date time.Time, ownerID int64) (int64, error) {
-	id, err := s.rep.CreateTask(text, tags, date, ownerID)
+func (s *TaskService) CreateTask(task model.Task) (int64, error) {
+	id, err := s.rep.CreateTask(task)
 	if err != nil {
 		return 0, fmt.Errorf("%w", err)
 	}
@@ -33,8 +32,24 @@ func (s *TaskService) GetTask(taskID, userID int64) (model.Task, error) {
 	return task, nil
 }
 
+func (s *TaskService) GetAllByUser(userID int64) ([]model.Task, error) {
+	tasks, err := s.rep.GetAllByUser(userID)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+	return tasks, nil
+}
+
 func (s *TaskService) DeleteTask(taskID, userID int64) error {
 	err := s.rep.DeleteTask(taskID, userID)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	return nil
+}
+
+func (s *TaskService) DeleteAllByUser(userID int64) error {
+	err := s.rep.DeleteAllByUser(userID)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
@@ -71,4 +86,13 @@ func (s *TaskService) GetTasksByTag(tag string, userID int64) ([]model.Task, err
 		return nil, fmt.Errorf("%w", err)
 	}
 	return tasks, nil
+}
+
+func (s *TaskService) UpdateTask(taskID, userID int64, Text string, Tags []string) error {
+	err := s.rep.UpdateTask(taskID, userID, Text, Tags)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	return nil
+
 }

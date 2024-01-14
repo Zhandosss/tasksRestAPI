@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
+	"restAPI/internal/http-server/response"
 	"strconv"
 )
 
@@ -21,10 +22,12 @@ func Delete(log *slog.Logger, deleter Deleter) http.HandlerFunc {
 
 		userID := r.Context().Value("userID").(int64)
 
-		if userID == 0 {
+		if userID <= 0 {
 			log.Error("couldn't get userID")
-			w.WriteHeader(http.StatusUnauthorized)
-			render.JSON(w, r, "failed to get user id")
+			w.WriteHeader(http.StatusForbidden)
+			render.JSON(w, r, response.Message{
+				Msg: "failed to get auth id",
+			})
 			return
 		}
 
@@ -32,30 +35,33 @@ func Delete(log *slog.Logger, deleter Deleter) http.HandlerFunc {
 		if taskIdString == "" {
 			log.Error("failed to get task id from url")
 			w.WriteHeader(http.StatusBadRequest)
-			render.JSON(w, r, "failed to get task id from url")
+			render.JSON(w, r, response.Message{
+				Msg: "failed to get task id from url",
+			})
 			return
 		}
 		taskId, err := strconv.Atoi(taskIdString)
 		if err != nil {
-			log.Error("incorrect task id record", slog.Attr{
-				Key:   "error",
-				Value: slog.StringValue(err.Error()),
-			})
+			log.Error("incorrect task id record", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusBadRequest)
-			render.JSON(w, r, "incorrect task id record")
+			render.JSON(w, r, response.Message{
+				Msg: "incorrect task id record",
+			})
 			return
 		}
 		err = deleter.DeleteTask(int64(taskId), userID)
 		if err != nil {
-			log.Error("can't found task", slog.Attr{
-				Key:   "error",
-				Value: slog.StringValue(err.Error()),
-			})
+			log.Error("can't found task", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusNotFound)
-			render.JSON(w, r, "can't found task")
+			render.JSON(w, r, response.Message{
+				Msg: "can't found task",
+			})
 			return
 		}
 		log.Info("task was deleted by Id", slog.Int("id", taskId))
 		w.WriteHeader(http.StatusNoContent)
+		render.JSON(w, r, response.Message{
+			Msg: "task deleted",
+		})
 	}
 }

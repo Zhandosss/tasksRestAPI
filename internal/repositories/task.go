@@ -1,12 +1,12 @@
 package repositories
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"log/slog"
 	"restAPI/internal/entities"
 	"restAPI/internal/model"
-	"time"
 )
 
 type TaskPostgres struct {
@@ -60,15 +60,15 @@ func (r *TaskPostgres) insertInTagInTask(taskID, tagID int64) error {
 	return nil
 }
 
-func (r *TaskPostgres) CreateTask(text string, tags []string, date time.Time, ownerID int64) (int64, error) {
+func (r *TaskPostgres) CreateTask(task model.Task) (int64, error) {
 	op := "CreateTask"
 	var taskID int64
 	query := "INSERT INTO tasks (task, date, owner_id) VALUES ($1, $2, $3) RETURNING id"
-	err := r.db.Get(&taskID, query, text, date, ownerID)
+	err := r.db.Get(&taskID, query, task.Text, task.Date, task.OwnerID)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
-	for _, tag := range tags {
+	for _, tag := range task.Tags {
 		tagID, err := r.getOrCreateTagID(tag)
 		if err != nil {
 			return 0, fmt.Errorf("%s: %w", op, err)
@@ -103,26 +103,6 @@ func (r *TaskPostgres) GetTask(taskID, userID int64) (model.Task, error) {
 	return task[0], nil
 }
 
-func (r *TaskPostgres) checkAndDelete(tagID int64) error {
-	op := "checkAndDelete"
-	query := "SELECT tag_id FROM tags_in_task WHERE tag_id = $1"
-	tags := make([]int64, 0)
-	err := r.db.Select(&tags, query, tagID)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-	if len(tags) != 0 {
-		return nil
-	}
-	query = "DELETE FROM tags WHERE id = $1"
-	_, err = r.db.Exec(query, tagID)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-	return nil
-
-}
-
 func (r *TaskPostgres) DeleteTask(taskID, userID int64) error {
 	op := "DeleteTask"
 	query := "DELETE FROM tasks WHERE id = $1 AND owner_id = $2"
@@ -137,22 +117,27 @@ func (r *TaskPostgres) DeleteTask(taskID, userID int64) error {
 	if rowsAffected == 0 {
 		return fmt.Errorf("%s: %w", op, ErrNoTask)
 	}
-	query = "SELECT tag_id FROM tags_in_task WHERE task_id = $1"
-	tagsID := make([]int64, 0)
-	err = r.db.Select(&tagsID, query, taskID)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
-	if len(tagsID) == 0 {
-		return nil
-	}
 	query = "DELETE FROM tags_in_task WHERE task_id = $1"
 	res, err = r.db.Exec(query, taskID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	for _, tagID := range tagsID {
-		err = r.checkAndDelete(tagID)
+	return nil
+}
+
+func (r *TaskPostgres) DeleteAllByUser(userID int64) error {
+	op := "DeleteAllByUser"
+	query := "SELECT id FROM tasks WHERE owner_id = $1"
+	tasks := make([]int64, 0)
+	err := r.db.Select(&tasks, query, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if len(tasks) == 0 {
+		return fmt.Errorf("%s: %w", op, ErrNoTasksByUser)
+	}
+	for _, taskID := range tasks {
+		err = r.DeleteTask(taskID, userID)
 		if err != nil {
 			return fmt.Errorf("%s: %w", op, err)
 		}
@@ -212,7 +197,7 @@ func (r *TaskPostgres) uniteTasks(rawTasks []entities.TaskWithTag) []model.Task 
 func (r *TaskPostgres) GetAllTasks() ([]model.Task, error) {
 	op := "GetAllTasks"
 	rawTasks := make([]entities.TaskWithTag, 0)
-	query := `SELECT tasks.id, task, date, tags.tag, owner_id AS tag FROM tasks 
+	query := `SELECT tasks.id, task, date, tags.tag AS tag, owner_id FROM tasks 
               LEFT OUTER JOIN tags_in_task 
                   ON tasks.id = tags_in_task.task_id 
     		  LEFT OUTER JOIN tags  
@@ -224,6 +209,26 @@ func (r *TaskPostgres) GetAllTasks() ([]model.Task, error) {
 	}
 	if len(rawTasks) == 0 {
 		return nil, fmt.Errorf("%s: %w", op, ErrEmptyTable)
+	}
+	tasks := r.uniteTasks(rawTasks)
+	return tasks, nil
+}
+
+func (r *TaskPostgres) GetAllByUser(userID int64) ([]model.Task, error) {
+	op := "GetAllByUser"
+	rawTasks := make([]entities.TaskWithTag, 0)
+	query := `SELECT tasks.id, task, date, tags.tag AS tag, owner_id FROM tasks
+			  LEFT OUTER JOIN tags_in_task
+ 				ON tasks.id = tags_in_task.task_id
+			  LEFT OUTER JOIN tags
+			  	ON tags.id = tags_in_task.tag_id
+			  WHERE owner_id = $1`
+	err := r.db.Select(&rawTasks, query)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	if len(rawTasks) == 0 {
+		return nil, fmt.Errorf("%s: %w", op, ErrNoTasksByUser)
 	}
 	tasks := r.uniteTasks(rawTasks)
 	return tasks, nil
@@ -263,9 +268,92 @@ func (r *TaskPostgres) GetTasksByTag(tag string, userID int64) ([]model.Task, er
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	if len(rawTasks) == 0 {
-		return nil, fmt.Errorf("%s: %w", op, ErrNoTaskByTag)
+		return nil, fmt.Errorf("%s: %w", op, ErrNoTasksByTag)
 	}
 	tasks := r.uniteTasks(rawTasks)
 	return tasks, nil
 
+}
+
+func (r *TaskPostgres) deleteFromTagsInTask(taskID int64, tagsToDelete []string) error {
+	op := "tagUpdate"
+	query := fmt.Sprintf("DELETE FROM tags_in_task WHERE task_id = %d AND tag_id IN (?)", taskID)
+	query, args, err := sqlx.In(query, tagsToDelete)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	query = r.db.Rebind(query)
+	res, err := r.db.Exec(query, args...)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("%s: %w", op, errors.New("can't delete tags"))
+	}
+	return nil
+}
+
+func (r *TaskPostgres) tagUpdate(taskID int64, tags []string) error {
+	op := "tagUpdate"
+	newTagsMap := make(map[string]struct{})
+	for _, tag := range tags {
+		newTagsMap[tag] = struct{}{}
+	}
+	oldTags := make([]string, 0)
+	query := `SELECT tags.tag, tags.id FROM tags_in_task
+			 LEFT JOIN tags on tags_in_task.tag_id = tags.id
+			 WHERE tags_in_task.task_id = $1`
+	err := r.db.Select(&oldTags, query, taskID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	tagsToDelete := make([]string, len(oldTags))
+	for _, tag := range oldTags {
+		if _, ok := newTagsMap[tag]; ok {
+			delete(newTagsMap, tag)
+		} else {
+			tagsToDelete = append(tagsToDelete, tag)
+		}
+	}
+	if err = r.deleteFromTagsInTask(taskID, tagsToDelete); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	for tag := range newTagsMap {
+		tagID, err := r.getOrCreateTagID(tag)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+		err = r.insertInTagInTask(taskID, tagID)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+	}
+	return nil
+}
+
+func (r *TaskPostgres) UpdateTask(taskID, userID int64, text string, tags []string) error {
+	op := "Update"
+	query := `UPDATE tasks
+			  SET task = $1
+			  WHERE id = $2 AND owner_id = $3`
+	res, err := r.db.Exec(query, text, taskID, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("%s: %w", op, ErrNoTask)
+	}
+	err = r.tagUpdate(taskID, tags)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	return nil
 }
