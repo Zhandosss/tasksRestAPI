@@ -32,8 +32,7 @@ func TestHandler_DeleteAll(t *testing.T) {
 			mockBehavior: func(s *mock_service.MockTask, userID int64) {
 				s.EXPECT().DeleteAllByUser(userID).Return(nil)
 			},
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"message":"all tasks deleted"}`,
+			expectedStatusCode: http.StatusNoContent,
 		}, {
 			name:                 "incorrect userID",
 			userID:               -1,

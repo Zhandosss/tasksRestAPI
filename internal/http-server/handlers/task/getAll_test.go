@@ -63,7 +63,7 @@ func TestHandler_GetAll(t *testing.T) {
 			mockBehavior: func(s *mock_service.MockTask, userID int64) {
 				s.EXPECT().GetAllByUser(userID).Return(nil, errors.New("test"))
 			},
-			expectedStatusCode:   http.StatusNotFound,
+			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"message":"couldn't get all task"}`,
 		},
 	}

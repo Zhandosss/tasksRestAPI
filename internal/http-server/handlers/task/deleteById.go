@@ -10,11 +10,24 @@ import (
 	"strconv"
 )
 
-type Deleter interface {
+type taskDeleter interface {
 	DeleteTask(taskID, userID int64) error
 }
 
-func Delete(log *slog.Logger, deleter Deleter) http.HandlerFunc {
+// Delete task by ID
+// @Summary Delete
+// @Security ApiKeyPath
+// @Tags Task
+// @Description Delete user task by ID
+// @ID deleteTaskByID
+// @Produce json
+// @Param task_id path int true "task ID"
+// @Success 204
+// @Failure 400,403 {object} response.Message
+// @Failure 500 {object} response.Message
+// @Failure default {object} response.Message
+// @Router /tasks/{taskId} [delete]
+func Delete(log *slog.Logger, deleter taskDeleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
@@ -52,7 +65,7 @@ func Delete(log *slog.Logger, deleter Deleter) http.HandlerFunc {
 		err = deleter.DeleteTask(int64(taskId), userID)
 		if err != nil {
 			log.Error("can't found task", slog.String("error", err.Error()))
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.Message{
 				Msg: "can't found task",
 			})
@@ -60,8 +73,5 @@ func Delete(log *slog.Logger, deleter Deleter) http.HandlerFunc {
 		}
 		log.Info("task was deleted by Id", slog.Int("id", taskId))
 		w.WriteHeader(http.StatusNoContent)
-		render.JSON(w, r, response.Message{
-			Msg: "task deleted",
-		})
 	}
 }

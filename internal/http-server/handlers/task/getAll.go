@@ -9,15 +9,27 @@ import (
 	"restAPI/internal/model"
 )
 
-type GetAllResponse struct {
+type getAllResponse struct {
 	Tasks []model.Task `json:"tasks"`
 }
 
-type AllGetterByUser interface {
+type allGetterByUser interface {
 	GetAllByUser(userID int64) ([]model.Task, error)
 }
 
-func GetAll(log *slog.Logger, getter AllGetterByUser) http.HandlerFunc {
+// GetAll user tasks
+// @Summary GetAll
+// @Security ApiKeyPath
+// @Tags Task
+// @Description Get all user tasks
+// @ID getAllUserTasks
+// @Produce json
+// @Success 200 {object} getAllResponse
+// @Failure 403 {object} response.Message
+// @Failure 500 {object} response.Message
+// @Failure default {object} response.Message
+// @Router /tasks/ [get]
+func GetAll(log *slog.Logger, getter allGetterByUser) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
@@ -37,7 +49,7 @@ func GetAll(log *slog.Logger, getter AllGetterByUser) http.HandlerFunc {
 		tasks, err := getter.GetAllByUser(userID)
 		if err != nil {
 			log.Error("couldn't get all tasks by this user", slog.String("error", err.Error()))
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.Message{
 				Msg: "couldn't get all task",
 			})
@@ -45,7 +57,7 @@ func GetAll(log *slog.Logger, getter AllGetterByUser) http.HandlerFunc {
 		}
 
 		log.Info("all user tasks copied", slog.Int64("userID", userID))
-		render.JSON(w, r, GetAllResponse{
+		render.JSON(w, r, getAllResponse{
 			Tasks: tasks,
 		})
 	}

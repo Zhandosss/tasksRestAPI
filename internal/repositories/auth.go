@@ -35,6 +35,11 @@ func (r *AuthPostgres) validateNewUser(login string) (bool, error) {
 
 func (r *AuthPostgres) CreateUser(user model.User) (int64, error) {
 	op := "CreateUser"
+	tx, err := r.db.Begin()
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+	defer tx.Rollback()
 	var userID int64
 	ok, err := r.validateNewUser(user.Login)
 	if err != nil {
@@ -49,15 +54,23 @@ func (r *AuthPostgres) CreateUser(user model.User) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
+	if tx.Commit() != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
 	return userID, nil
 }
 
 func (r *AuthPostgres) GetUser(login, password string) (model.User, error) {
 	op := "GetUser"
+	tx, err := r.db.Begin()
+	if err != nil {
+		return model.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+	defer tx.Rollback()
 	user := make([]model.User, 0)
 	query := `SELECT id, firstname, secondname, login, password_hash
 			 FROM users WHERE login = $1`
-	err := r.db.Select(&user, query, login)
+	err = r.db.Select(&user, query, login)
 	if err != nil {
 		return model.User{}, fmt.Errorf("%s: %w", op, err)
 	}
@@ -66,6 +79,9 @@ func (r *AuthPostgres) GetUser(login, password string) (model.User, error) {
 	}
 	if len(user) != 1 {
 		return model.User{}, fmt.Errorf("%s: %w", op, ErrTwoSameLoginInDb)
+	}
+	if tx.Commit() != nil {
+		return model.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 	return user[0], nil
 }

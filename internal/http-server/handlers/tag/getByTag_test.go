@@ -73,7 +73,7 @@ func TestHandler_GetByTag(t *testing.T) {
 			mockBehavior: func(s *mock_service.MockTask, tag string, userID int64) {
 				s.EXPECT().GetTasksByTag(tag, userID).Return(nil, errors.New("test"))
 			},
-			expectedStatusCode:   http.StatusNotFound,
+			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"message":"couldn't find any task by tag"}`,
 		},
 	}

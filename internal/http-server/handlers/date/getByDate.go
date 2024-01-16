@@ -13,15 +13,30 @@ import (
 	"strconv"
 )
 
-type Response struct {
+type getTaskResponse struct {
 	Tasks []model.Task `json:"tasks"`
 }
 
-type GetterByDue interface {
+type getterByDate interface {
 	GetTasksByDate(day, month, year int, userID int64) ([]model.Task, error)
 }
 
-func Get(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
+// Get task by date
+// @Summary Get
+// @Security ApiKeyPath
+// @Tags Date
+// @Description Get user task by date
+// @ID getTaskByDate
+// @Param year path int true "year"
+// @Param month path int true "month"
+// @Param day path int true "day"
+// @Produce json
+// @Success 200 {object} getTaskResponse
+// @Failure 400,403 {object} response.Message
+// @Failure 500 {object} response.Message
+// @Failure default {object} response.Message
+// @Router /date/{year}/{month}/{day} [get]
+func Get(log *slog.Logger, getterByDate getterByDate) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
@@ -53,17 +68,17 @@ func Get(log *slog.Logger, getterByDue GetterByDue) http.HandlerFunc {
 		monthInt, _ := strconv.Atoi(month)
 		yearInt, _ := strconv.Atoi(year)
 
-		tasks, err := getterByDue.GetTasksByDate(dayInt, monthInt, yearInt, userID)
+		tasks, err := getterByDate.GetTasksByDate(dayInt, monthInt, yearInt, userID)
 		if err != nil {
 			log.Error("get tasks by date", slog.String("error", err.Error()))
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.Message{
 				Msg: "couldn't find any tasks by date",
 			})
 			return
 		}
 		log.Info("tasks copied by data", slog.String("day", day), slog.String("month", month), slog.String("year", year))
-		render.JSON(w, r, Response{
+		render.JSON(w, r, getTaskResponse{
 			Tasks: tasks,
 		})
 

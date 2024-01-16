@@ -1,0 +1,473 @@
+basePath: /
+definitions:
+  auth.signInRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  auth.signInResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  auth.signUpRequest:
+    properties:
+      first_name:
+        type: string
+      login:
+        type: string
+      password:
+        type: string
+      second_name:
+        type: string
+    type: object
+  auth.signUpResponse:
+    properties:
+      user_id:
+        type: integer
+    type: object
+  date.getTaskResponse:
+    properties:
+      tasks:
+        items:
+          $ref: '#/definitions/model.Task'
+        type: array
+    type: object
+  model.Task:
+    properties:
+      date:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      text:
+        type: string
+    type: object
+  response.Message:
+    properties:
+      message:
+        type: string
+    type: object
+  tag.getTaskResponse:
+    properties:
+      tasks:
+        items:
+          $ref: '#/definitions/model.Task'
+        type: array
+    type: object
+  task.createRequest:
+    properties:
+      date:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      text:
+        type: string
+    type: object
+  task.createResponse:
+    properties:
+      task_id:
+        type: integer
+    type: object
+  task.getAllResponse:
+    properties:
+      tasks:
+        items:
+          $ref: '#/definitions/model.Task'
+        type: array
+    type: object
+  task.getTaskResponse:
+    properties:
+      task:
+        $ref: '#/definitions/model.Task'
+    type: object
+  task.updateRequest:
+    properties:
+      tags:
+        items:
+          type: string
+        type: array
+      text:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API Server for Task application
+  title: Task App API
+  version: "1.0"
+paths:
+  /auth/sign-in:
+    post:
+      consumes:
+      - application/json
+      description: Login handler
+      operationId: login
+      parameters:
+      - description: Login and password
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/auth.signInRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/auth.signInResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Message'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Message'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/response.Message'
+      summary: SignIn
+      tags:
+      - Authorization
+  /auth/sign-up:
+    post:
+      consumes:
+      - application/json
+      description: Sign up handler
+      operationId: signUp
+      parameters:
+      - description: user info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/auth.signUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/auth.signUpResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Message'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Message'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/response.Message'
+      summary: SignUp
+      tags:
+      - Authorization
+  /date/{year}/{month}/{day}:
+    get:
+      description: Get user task by date
+      operationId: getTaskByDate
+      parameters:
+      - description: year
+        in: path
+        name: year
+        required: true
+        type: integer
+      - description: month
+        in: path
+        name: month
+        required: true
+        type: integer
+      - description: day
+        in: path
+        name: day
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/date.getTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Message'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Message'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Message'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/response.Message'
+      security:
+      - ApiKeyPath: []
+      summary: Get
+      tags:
+      - Date
+  /tag/{tag}:
+    get:
+      description: Get user task by tag
+      operationId: getTaskByTag
+      parameters:
+      - description: tag
+        in: path
+        name: tag
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tag.getTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Message'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Message'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Message'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/response.Message'
+      security:
+      - ApiKeyPath: []
+      summary: Get
+      tags:
+      - Tag
+  /tasks/:
+    delete:
+      description: Delete all user tasks
+      operationId: deleteAllUserTasks
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Message'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Message'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/response.Message'
+      security:
+      - ApiKeyPath: []
+      summary: DeleteAll
+      tags:
+      - Task
+    get:
+      description: Get all user tasks
+      operationId: getAllUserTasks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/task.getAllResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Message'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Message'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/response.Message'
+      security:
+      - ApiKeyPath: []
+      summary: GetAll
+      tags:
+      - Task
+    post:
+      consumes:
+      - application/json
+      description: Create new task
+      operationId: createTask
+      parameters:
+      - description: Task info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/task.createRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/task.createResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Message'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Message'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Message'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/response.Message'
+      security:
+      - ApiKeyPath: []
+      summary: Create
+      tags:
+      - Task
+  /tasks/{taskId}:
+    delete:
+      description: Delete user task by ID
+      operationId: deleteTaskByID
+      parameters:
+      - description: task ID
+        in: path
+        name: task_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Message'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Message'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Message'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/response.Message'
+      security:
+      - ApiKeyPath: []
+      summary: Delete
+      tags:
+      - Task
+    get:
+      description: Get user task by ID
+      operationId: getTaskByID
+      parameters:
+      - description: task ID
+        in: path
+        name: task_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/task.getTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Message'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Message'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Message'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/response.Message'
+      security:
+      - ApiKeyPath: []
+      summary: Get
+      tags:
+      - Task
+    put:
+      description: Update user task by ID
+      operationId: updateTaskByID
+      parameters:
+      - description: new text and tags
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/task.updateRequest'
+      - description: task ID
+        in: path
+        name: task_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Message'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Message'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Message'
+        default:
+          description: ""
+          schema:
+            $ref: '#/definitions/response.Message'
+      security:
+      - ApiKeyPath: []
+      summary: Update
+      tags:
+      - Task
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -97,7 +97,7 @@ func TestHandler_signUp(t *testing.T) {
 			mockBehavior: func(s *mock_service.MockAuthorization, user model.User) {
 				s.EXPECT().CreateUser(user).Return(int64(0), errors.New("test"))
 			},
-			expectedStatusCode:   http.StatusBadRequest,
+			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"message":"failed to register"}`,
 		},
 	}

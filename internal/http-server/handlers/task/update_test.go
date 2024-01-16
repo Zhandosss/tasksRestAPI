@@ -25,7 +25,7 @@ func TestHandler_UpdateTask(t *testing.T) {
 		stringTaskID         string
 		taskID               int64
 		userID               int64
-		inputRequest         UpdateRequest
+		inputRequest         updateRequest
 		mockBehavior         MockBehavior
 		expectedStatusCode   int
 		expectedResponseBody string
@@ -36,15 +36,14 @@ func TestHandler_UpdateTask(t *testing.T) {
 			stringTaskID: "1",
 			taskID:       1,
 			userID:       1,
-			inputRequest: UpdateRequest{
+			inputRequest: updateRequest{
 				Text: "testText",
 				Tags: []string{"testTag1", "testTag2"},
 			},
 			mockBehavior: func(s *mock_service.MockTask, taskID, userID int64, text string, tags []string) {
 				s.EXPECT().UpdateTask(taskID, userID, text, tags).Return(nil)
 			},
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"message":"task updated"}`,
+			expectedStatusCode: http.StatusNoContent,
 		}, {
 			name:                 "incorrect userID",
 			userID:               -1,
@@ -87,14 +86,14 @@ func TestHandler_UpdateTask(t *testing.T) {
 			stringTaskID: "1",
 			taskID:       1,
 			userID:       1,
-			inputRequest: UpdateRequest{
+			inputRequest: updateRequest{
 				Text: "testText",
 				Tags: []string{"testTag1", "testTag2"},
 			},
 			mockBehavior: func(s *mock_service.MockTask, taskID, userID int64, text string, tags []string) {
 				s.EXPECT().UpdateTask(taskID, userID, text, tags).Return(errors.New("test"))
 			},
-			expectedStatusCode:   http.StatusNotFound,
+			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"message":"can't update task"}`,
 		},
 	}

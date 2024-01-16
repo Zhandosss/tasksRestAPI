@@ -9,12 +9,12 @@ import (
 	"restAPI/pkg/lib/verification"
 )
 
-type SignInRequest struct {
+type signInRequest struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }
 
-type SignInResponse struct {
+type signInResponse struct {
 	Token string `json:"token"`
 }
 
@@ -22,13 +22,26 @@ type tokenGenerator interface {
 	GenerateToken(login, password string) (string, error)
 }
 
+// SignIn
+// @Summary SignIn
+// @Tags Authorization
+// @Description Login handler
+// @ID login
+// @Accept json
+// @Produce json
+// @Param input body signInRequest true "Login and password"
+// @Success 201 {object} signInResponse
+// @Failure 400 {object} response.Message
+// @Failure 500 {object} response.Message
+// @Failure default {object} response.Message
+// @Router /auth/sign-in [post]
 func SignIn(log *slog.Logger, generator tokenGenerator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
 		)
 		//request decoding
-		var req SignInRequest
+		var req signInRequest
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
 			log.Error("failed to decode request body", slog.String("error", err.Error()))
@@ -62,7 +75,7 @@ func SignIn(log *slog.Logger, generator tokenGenerator) http.HandlerFunc {
 		//sending success response to client
 		log.Info("token created")
 		w.WriteHeader(http.StatusCreated)
-		render.JSON(w, r, SignInResponse{
+		render.JSON(w, r, signInResponse{
 			Token: token,
 		})
 	}

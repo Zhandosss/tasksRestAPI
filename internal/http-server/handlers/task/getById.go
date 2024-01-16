@@ -11,15 +11,28 @@ import (
 	"strconv"
 )
 
-type GetTaskResponse struct {
+type getTaskResponse struct {
 	Task model.Task `json:"task"`
 }
 
-type Getter interface {
+type taskGetter interface {
 	GetTask(taskID, UserID int64) (model.Task, error)
 }
 
-func Get(log *slog.Logger, taskGetter Getter) http.HandlerFunc {
+// Get task by ID
+// @Summary Get
+// @Security ApiKeyPath
+// @Tags Task
+// @Description Get user task by ID
+// @ID getTaskByID
+// @Param task_id path int true "task ID"
+// @Produce json
+// @Success 200 {object} getTaskResponse
+// @Failure 400,403 {object} response.Message
+// @Failure 500 {object} response.Message
+// @Failure default {object} response.Message
+// @Router /tasks/{taskId} [get]
+func Get(log *slog.Logger, taskGetter taskGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
@@ -57,14 +70,14 @@ func Get(log *slog.Logger, taskGetter Getter) http.HandlerFunc {
 		task, err := taskGetter.GetTask(int64(taskId), userID)
 		if err != nil {
 			log.Error("can't found task", slog.String("error", err.Error()))
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.Message{
 				Msg: "can't found task",
 			})
 			return
 		}
 		log.Info("task copied by id", slog.Int("id", taskId))
-		render.JSON(w, r, GetTaskResponse{
+		render.JSON(w, r, getTaskResponse{
 			Task: task,
 		})
 	}

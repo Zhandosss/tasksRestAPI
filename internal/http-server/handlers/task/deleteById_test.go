@@ -35,8 +35,7 @@ func TestHandler_DeleteTask(t *testing.T) {
 			mockBehavior: func(s *mock_service.MockTask, taskID, userID int64) {
 				s.EXPECT().DeleteTask(taskID, userID).Return(nil)
 			},
-			expectedStatusCode:   http.StatusNoContent,
-			expectedResponseBody: `{"message":"task deleted"}`,
+			expectedStatusCode: http.StatusNoContent,
 		}, {
 			name:                 "incorrect userID",
 			userID:               -1,
@@ -65,7 +64,7 @@ func TestHandler_DeleteTask(t *testing.T) {
 			mockBehavior: func(s *mock_service.MockTask, taskID, userID int64) {
 				s.EXPECT().DeleteTask(taskID, userID).Return(errors.New("test"))
 			},
-			expectedStatusCode:   http.StatusNotFound,
+			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"message":"can't found task"}`,
 		},
 	}

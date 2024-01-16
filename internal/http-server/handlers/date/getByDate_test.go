@@ -82,7 +82,7 @@ func TestHandler_GetByTag(t *testing.T) {
 			mockBehavior: func(s *mock_service.MockTask, day, month, year int, userID int64) {
 				s.EXPECT().GetTasksByDate(day, month, year, userID).Return(nil, errors.New("test"))
 			},
-			expectedStatusCode:   http.StatusNotFound,
+			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"message":"couldn't find any tasks by date"}`,
 		},
 	}

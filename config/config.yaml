@@ -1,5 +1,4 @@
 env: "local"
-login: "jandosss1"
 admin:
   login: "jandosss1"
 http_server:

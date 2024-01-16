@@ -11,25 +11,39 @@ import (
 	"time"
 )
 
-type CreateRequest struct {
+type createRequest struct {
 	model.Task
 }
 
-type CreateResponse struct {
+type createResponse struct {
 	TaskID int64 `json:"task_id"`
 }
 
-type Creater interface {
+type taskCreater interface {
 	CreateTask(task model.Task) (int64, error)
 }
 
-func Create(log *slog.Logger, creater Creater, callTime time.Time) http.HandlerFunc {
+// Create task
+// @Summary Create
+// @Security ApiKeyPath
+// @Tags Task
+// @Description Create new task
+// @ID createTask
+// @Accept json
+// @Produce json
+// @Param input body createRequest true "Task info"
+// @Success 201 {object} createResponse
+// @Failure 400,403 {object} response.Message
+// @Failure 500 {object} response.Message
+// @Failure default {object} response.Message
+// @Router /tasks/ [post]
+func Create(log *slog.Logger, creater taskCreater, callTime time.Time) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
 		)
 
-		var req CreateRequest
+		var req createRequest
 		//getting user id from request context
 		userID := r.Context().Value("userID").(int64)
 
@@ -80,7 +94,7 @@ func Create(log *slog.Logger, creater Creater, callTime time.Time) http.HandlerF
 
 		//success request
 		w.WriteHeader(http.StatusCreated)
-		render.JSON(w, r, CreateResponse{
+		render.JSON(w, r, createResponse{
 			TaskID: taskId,
 		})
 

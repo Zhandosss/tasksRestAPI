@@ -10,15 +10,28 @@ import (
 	"restAPI/internal/model"
 )
 
-type Response struct {
+type getTaskResponse struct {
 	Tasks []model.Task `json:"tasks"`
 }
 
-type GetterByTag interface {
+type getterByTag interface {
 	GetTasksByTag(tag string, userID int64) ([]model.Task, error)
 }
 
-func Get(log *slog.Logger, getterByTag GetterByTag) http.HandlerFunc {
+// Get task by tag
+// @Summary Get
+// @Security ApiKeyPath
+// @Tags Tag
+// @Description Get user task by tag
+// @ID getTaskByTag
+// @Param tag path string true "tag"
+// @Produce json
+// @Success 200 {object} getTaskResponse
+// @Failure 400,403 {object} response.Message
+// @Failure 500 {object} response.Message
+// @Failure default {object} response.Message
+// @Router /tag/{tag} [get]
+func Get(log *slog.Logger, getterByTag getterByTag) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
@@ -47,14 +60,14 @@ func Get(log *slog.Logger, getterByTag GetterByTag) http.HandlerFunc {
 		tasks, err := getterByTag.GetTasksByTag(tag, userID)
 		if err != nil {
 			log.Error("couldn't find any task by tag", slog.String("error", err.Error()))
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.Message{
 				Msg: "couldn't find any task by tag",
 			})
 			return
 		}
 		log.Info("tasks copied by tag", slog.String("tag", tag))
-		render.JSON(w, r, Response{
+		render.JSON(w, r, getTaskResponse{
 			Tasks: tasks,
 		})
 	}

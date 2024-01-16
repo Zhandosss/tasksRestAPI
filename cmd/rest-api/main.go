@@ -4,8 +4,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jmoiron/sqlx"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"log/slog"
 	"net/http"
+	_ "restAPI/docs"
 	"restAPI/internal/config"
 	"restAPI/internal/db"
 	"restAPI/internal/http-server/handlers/admin"
@@ -20,6 +22,16 @@ import (
 	"time"
 )
 
+//@title Task App API
+//@version 1.0
+//@description API Server for Task application
+
+// @host      localhost:8080
+// @BasePath  /
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	cfg := config.New()
 
@@ -45,6 +57,10 @@ func main() {
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
+
+	router.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8080/swagger/doc.json"), //The url pointing to API definition
+	))
 
 	router.Route("/auth", func(router chi.Router) {
 		router.Post("/sign-up", auth.SignUp(log, services))

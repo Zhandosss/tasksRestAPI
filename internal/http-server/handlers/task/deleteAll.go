@@ -8,11 +8,22 @@ import (
 	"restAPI/internal/http-server/response"
 )
 
-type AllDeleter interface {
+type allTasksDeleter interface {
 	DeleteAllByUser(userID int64) error
 }
 
-func DeleteAll(log *slog.Logger, deleter AllDeleter) http.HandlerFunc {
+// DeleteAll user tasks
+// @Summary DeleteAll
+// @Security ApiKeyPath
+// @Tags Task
+// @Description Delete all user tasks
+// @ID deleteAllUserTasks
+// @Produce json
+// @Success 204
+// @Failure 404,403 {object} response.Message
+// @Failure default {object} response.Message
+// @Router /tasks/ [delete]
+func DeleteAll(log *slog.Logger, deleter allTasksDeleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
@@ -41,8 +52,6 @@ func DeleteAll(log *slog.Logger, deleter AllDeleter) http.HandlerFunc {
 		}
 
 		log.Info("all user tasks deleted", slog.Int64("userID", userID))
-		render.JSON(w, r, response.Message{
-			Msg: "all tasks deleted",
-		})
+		w.WriteHeader(http.StatusNoContent)
 	}
 }

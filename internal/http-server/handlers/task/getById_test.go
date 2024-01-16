@@ -74,7 +74,7 @@ func TestHandler_GetTask(t *testing.T) {
 			mockBehavior: func(s *mock_service.MockTask, taskID, userID int64) {
 				s.EXPECT().GetTask(taskID, userID).Return(model.Task{}, errors.New("test"))
 			},
-			expectedStatusCode:   http.StatusNotFound,
+			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"message":"can't found task"}`,
 		},
 	}
