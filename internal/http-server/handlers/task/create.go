@@ -33,11 +33,11 @@ type taskCreater interface {
 // @Produce json
 // @Param input body createRequest true "Task info"
 // @Success 201 {object} createResponse
-// @Failure 400,403 {object} response.Message
+// @Failure 400,401 {object} response.Message
 // @Failure 500 {object} response.Message
 // @Failure default {object} response.Message
 // @Router /tasks/ [post]
-func Create(log *slog.Logger, creater taskCreater, callTime time.Time) http.HandlerFunc {
+func Create(log *slog.Logger, creater taskCreater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
@@ -49,7 +49,7 @@ func Create(log *slog.Logger, creater taskCreater, callTime time.Time) http.Hand
 
 		if userID <= 0 {
 			log.Error("incorrect userID", slog.Int64("userID", userID))
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			render.JSON(w, r, response.Message{
 				Msg: "incorrect userID",
 			})
@@ -68,9 +68,10 @@ func Create(log *slog.Logger, creater taskCreater, callTime time.Time) http.Hand
 		}
 
 		req.Task.OwnerID = userID
+		req.Task.Date = time.Now()
 		//task verification
 		//TODO: ADD request body in logger output
-		if !verification.Task(req.Task, callTime) {
+		if !verification.Task(req.Task) {
 			log.Error("incorrect task information")
 			w.WriteHeader(http.StatusBadRequest)
 			render.JSON(w, r, response.Message{
@@ -82,6 +83,7 @@ func Create(log *slog.Logger, creater taskCreater, callTime time.Time) http.Hand
 		log.Info("request body decoded", slog.Any("request", req))
 
 		taskId, err := creater.CreateTask(req.Task)
+
 		if err != nil {
 			log.Error("failed to create task:", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)

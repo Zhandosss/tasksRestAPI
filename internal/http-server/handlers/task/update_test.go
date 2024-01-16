@@ -3,7 +3,6 @@ package task
 import (
 	"bytes"
 	"context"
-	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -11,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"restAPI/internal/repositories"
 	mock_service "restAPI/internal/service/mocks"
 	"strings"
 	"testing"
@@ -48,7 +48,7 @@ func TestHandler_UpdateTask(t *testing.T) {
 			name:                 "incorrect userID",
 			userID:               -1,
 			mockBehavior:         func(s *mock_service.MockTask, taskID, userID int64, text string, tags []string) {},
-			expectedStatusCode:   http.StatusForbidden,
+			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: `{"message":"failed to get auth id"}`,
 		}, {
 			name:                 "bad request",
@@ -81,7 +81,7 @@ func TestHandler_UpdateTask(t *testing.T) {
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: `{"message":"incorrect task id record"}`,
 		}, {
-			name:         "incorrect taskID return",
+			name:         "incorrect taskID return: no task",
 			inputBody:    `{"text":"testText","tags":["testTag1", "testTag2"]}`,
 			stringTaskID: "1",
 			taskID:       1,
@@ -91,10 +91,10 @@ func TestHandler_UpdateTask(t *testing.T) {
 				Tags: []string{"testTag1", "testTag2"},
 			},
 			mockBehavior: func(s *mock_service.MockTask, taskID, userID int64, text string, tags []string) {
-				s.EXPECT().UpdateTask(taskID, userID, text, tags).Return(errors.New("test"))
+				s.EXPECT().UpdateTask(taskID, userID, text, tags).Return(repositories.ErrNoTask)
 			},
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"message":"can't update task"}`,
+			expectedStatusCode:   http.StatusNotFound,
+			expectedResponseBody: `{"message":"there no task with this taskID"}`,
 		},
 	}
 

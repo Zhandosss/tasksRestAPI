@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"restAPI/internal/repositories"
 	mock_service "restAPI/internal/service/mocks"
 	"strings"
 	"testing"
@@ -40,7 +41,7 @@ func TestHandler_DeleteTask(t *testing.T) {
 			name:                 "incorrect userID",
 			userID:               -1,
 			mockBehavior:         func(s *mock_service.MockTask, taskID, userID int64) {},
-			expectedStatusCode:   http.StatusForbidden,
+			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: `{"message":"failed to get auth id"}`,
 		}, {
 			name:                 "empty taskID",
@@ -57,7 +58,17 @@ func TestHandler_DeleteTask(t *testing.T) {
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: `{"message":"incorrect task id record"}`,
 		}, {
-			name:         "incorrect DeleteTask return",
+			name:         "incorrect DeleteTask return: no content",
+			stringTaskID: "1",
+			taskID:       1,
+			userID:       1,
+			mockBehavior: func(s *mock_service.MockTask, taskID, userID int64) {
+				s.EXPECT().DeleteTask(taskID, userID).Return(repositories.ErrNoTask)
+			},
+			expectedStatusCode:   http.StatusNotFound,
+			expectedResponseBody: `{"message":"there no task with this taskID"}`,
+		}, {
+			name:         "incorrect DeleteTask return: internal server error",
 			stringTaskID: "1",
 			taskID:       1,
 			userID:       1,

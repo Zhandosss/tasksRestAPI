@@ -13,10 +13,10 @@ var (
 	ErrEmptyTable       = errors.New("table is empty")
 	ErrNoTasksByDate    = errors.New("no tasks found by this date")
 	ErrNoTasksByTag     = errors.New("no tasks found by this tag")
-	ErrNoTasksByUser    = errors.New("no tasks found for this user")
-	ErrUserAlreadyExist = errors.New("auth already exist")
-	ErrNoSuchUser       = errors.New("there is no such auth")
-	ErrTwoSameLoginInDb = errors.New("there is two same auth logins in db")
+	ErrUserAlreadyExist = errors.New("user already exist")
+	ErrNoSuchUser       = errors.New("there is no such user")
+	ErrTwoSameLoginInDb = errors.New("there is two same user logins in db")
+	ErrWrongPassword    = errors.New("wrong password")
 )
 
 type Task interface {

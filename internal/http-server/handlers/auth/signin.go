@@ -1,11 +1,13 @@
 package auth
 
 import (
+	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"restAPI/internal/http-server/response"
+	"restAPI/internal/repositories"
 	"restAPI/pkg/lib/verification"
 )
 
@@ -31,7 +33,7 @@ type tokenGenerator interface {
 // @Produce json
 // @Param input body signInRequest true "Login and password"
 // @Success 201 {object} signInResponse
-// @Failure 400 {object} response.Message
+// @Failure 400,401 {object} response.Message
 // @Failure 500 {object} response.Message
 // @Failure default {object} response.Message
 // @Router /auth/sign-in [post]
@@ -64,8 +66,28 @@ func SignIn(log *slog.Logger, generator tokenGenerator) http.HandlerFunc {
 		log.Info("request body decoded", slog.Any("request", req))
 		//token generation
 		token, err := generator.GenerateToken(req.Login, req.Password)
+		if errors.Is(err, repositories.ErrNoSuchUser) {
+			log.Error("user is not exist", slog.String("login", req.Login))
+			w.WriteHeader(http.StatusUnauthorized)
+			render.JSON(w, r, response.Message{
+				Msg: "wrong login",
+			})
+			return
+		}
+		if errors.Is(err, repositories.ErrWrongPassword) {
+			log.Error("wrong password", slog.String("login", req.Login))
+			w.WriteHeader(http.StatusUnauthorized)
+			render.JSON(w, r, response.Message{
+				Msg: "wrong password",
+			})
+			return
+		}
 		if err != nil {
-			log.Error("generating token error", slog.String("error", err.Error()))
+			if errors.Is(err, repositories.ErrTwoSameLoginInDb) {
+				log.Error("!!!!!!!!!!!DB ERROR TWO SAME LOGIN IN DB!!!!!!!!", slog.String("login", req.Login))
+			} else {
+				log.Error("generating token error", slog.String("error", err.Error()))
+			}
 			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.Message{
 				Msg: "failed to login",

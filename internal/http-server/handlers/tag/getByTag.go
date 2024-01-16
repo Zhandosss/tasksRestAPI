@@ -27,7 +27,7 @@ type getterByTag interface {
 // @Param tag path string true "tag"
 // @Produce json
 // @Success 200 {object} getTaskResponse
-// @Failure 400,403 {object} response.Message
+// @Failure 400,401 {object} response.Message
 // @Failure 500 {object} response.Message
 // @Failure default {object} response.Message
 // @Router /tag/{tag} [get]
@@ -41,7 +41,7 @@ func Get(log *slog.Logger, getterByTag getterByTag) http.HandlerFunc {
 
 		if userID <= 0 {
 			log.Error("couldn't get userID")
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			render.JSON(w, r, response.Message{
 				Msg: "failed to get auth id",
 			})

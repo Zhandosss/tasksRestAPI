@@ -8,7 +8,7 @@ import (
 )
 
 func New(config *config.DB) (*sqlx.DB, error) {
-	dataSource := fmt.Sprintf("auth=%s password=%s host=%s dbname=%s sslmode=require",
+	dataSource := fmt.Sprintf("user=%s password=%s host=%s dbname=%s sslmode=require",
 		config.User, config.Password, config.Host, config.Name)
 	conn, err := sqlx.Connect("postgres", dataSource)
 	if err != nil {

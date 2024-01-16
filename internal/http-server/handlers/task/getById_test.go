@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"restAPI/internal/model"
+	"restAPI/internal/repositories"
 	mock_service "restAPI/internal/service/mocks"
 	"strings"
 	"testing"
@@ -50,7 +51,7 @@ func TestHandler_GetTask(t *testing.T) {
 			name:                 "incorrect userID",
 			userID:               -1,
 			mockBehavior:         func(s *mock_service.MockTask, taskID, userID int64) {},
-			expectedStatusCode:   http.StatusForbidden,
+			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: `{"message":"failed to get auth id"}`,
 		}, {
 			name:                 "empty taskID",
@@ -67,7 +68,17 @@ func TestHandler_GetTask(t *testing.T) {
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: `{"message":"incorrect task id record"}`,
 		}, {
-			name:         "incorrect GetTask return",
+			name:         "incorrect GetTask return: no task",
+			stringTaskID: "1",
+			taskID:       1,
+			userID:       1,
+			mockBehavior: func(s *mock_service.MockTask, taskID, userID int64) {
+				s.EXPECT().GetTask(taskID, userID).Return(model.Task{}, repositories.ErrNoTask)
+			},
+			expectedStatusCode:   http.StatusNotFound,
+			expectedResponseBody: `{"message":"there no task with this taskID"}`,
+		}, {
+			name:         "incorrect GetTask return: internal server problem",
 			stringTaskID: "1",
 			taskID:       1,
 			userID:       1,

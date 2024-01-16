@@ -126,6 +126,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.Message'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Message'
         "500":
           description: Internal Server Error
           schema:
@@ -159,6 +163,10 @@ paths:
             $ref: '#/definitions/auth.signUpResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Message'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/response.Message'
         "500":
@@ -203,8 +211,8 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.Message'
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/response.Message'
         "500":
@@ -241,8 +249,8 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.Message'
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/response.Message'
         "500":
@@ -267,12 +275,12 @@ paths:
       responses:
         "204":
           description: No Content
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/response.Message'
-        "404":
-          description: Not Found
+        "500":
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Message'
         default:
@@ -294,8 +302,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/task.getAllResponse'
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/response.Message'
         "500":
@@ -334,8 +342,8 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.Message'
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/response.Message'
         "500":
@@ -370,8 +378,12 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.Message'
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Message'
+        "404":
+          description: Not Found
           schema:
             $ref: '#/definitions/response.Message'
         "500":
@@ -407,8 +419,12 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.Message'
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Message'
+        "404":
+          description: Not Found
           schema:
             $ref: '#/definitions/response.Message'
         "500":
@@ -448,8 +464,12 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.Message'
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Message'
+        "404":
+          description: Not Found
           schema:
             $ref: '#/definitions/response.Message'
         "500":

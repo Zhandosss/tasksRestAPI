@@ -7,8 +7,7 @@ import (
 )
 
 var (
-	ErrWrongPassword = errors.New("wrong password")
-	ErrTokenClaims   = errors.New("token claims are not of type *tokenClaims")
+	ErrTokenClaims = errors.New("token claims are not of type *tokenClaims")
 )
 
 //go:generate mockgen -source=service.go -destination=mocks/mock.go

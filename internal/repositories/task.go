@@ -163,7 +163,10 @@ func (r *TaskPostgres) DeleteAllByUser(userID int64) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 	if len(tasks) == 0 {
-		return fmt.Errorf("%s: %w", op, ErrNoTasksByUser)
+		if tx.Commit() != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+		return nil
 	}
 	for _, taskID := range tasks {
 		err = r.DeleteTask(taskID, userID)
@@ -276,12 +279,15 @@ func (r *TaskPostgres) GetAllByUser(userID int64) ([]model.Task, error) {
 			  LEFT OUTER JOIN tags
 			  	ON tags.id = tags_in_task.tag_id
 			  WHERE owner_id = $1`
-	err = r.db.Select(&rawTasks, query)
+	err = r.db.Select(&rawTasks, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	if len(rawTasks) == 0 {
-		return nil, fmt.Errorf("%s: %w", op, ErrNoTasksByUser)
+		if tx.Commit() != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		return []model.Task{}, nil
 	}
 	tasks := r.uniteTasks(rawTasks)
 	if tx.Commit() != nil {
@@ -309,7 +315,10 @@ func (r *TaskPostgres) GetTasksByDate(day, month, year int, userID int64) ([]mod
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	if len(rawTasks) == 0 {
-		return nil, fmt.Errorf("%s: %w", op, ErrNoTasksByDate)
+		if tx.Commit() != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		return []model.Task{}, nil
 	}
 	tasks := r.uniteTasks(rawTasks)
 	if tx.Commit() != nil {
@@ -337,7 +346,10 @@ func (r *TaskPostgres) GetTasksByTag(tag string, userID int64) ([]model.Task, er
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	if len(rawTasks) == 0 {
-		return nil, fmt.Errorf("%s: %w", op, ErrNoTasksByTag)
+		if tx.Commit() != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		return []model.Task{}, nil
 	}
 	tasks := r.uniteTasks(rawTasks)
 	if tx.Commit() != nil {

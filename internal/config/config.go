@@ -24,7 +24,7 @@ type DB struct {
 	Host     string `yaml:"host"`
 	Port     string `yaml:"port"`
 	Name     string `yaml:"name"`
-	User     string `yaml:"auth"`
+	User     string `yaml:"user"`
 	Password string
 }
 

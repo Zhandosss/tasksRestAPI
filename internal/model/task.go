@@ -6,7 +6,7 @@ import (
 )
 
 type Task struct {
-	ID      int64     `json:"-" db:"task_id"`
+	ID      int64     `json:"-" db:"id"`
 	Text    string    `json:"text" db:"task"`
 	Tags    []string  `json:"tags" db:"omitempty"`
 	Date    time.Time `json:"date" db:"date"`

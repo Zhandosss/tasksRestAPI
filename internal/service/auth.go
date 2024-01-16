@@ -48,9 +48,6 @@ func (s *AuthService) GenerateToken(login, password string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("%w", err)
 	}
-	if password != user.Password {
-		return "", fmt.Errorf("%w", ErrWrongPassword)
-	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(12 * time.Hour)),

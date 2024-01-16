@@ -6,7 +6,7 @@ import (
 )
 
 type TaskWithTag struct {
-	ID      int64     `db:"task_id"`
+	ID      int64     `db:"id"`
 	Task    string    `db:"task"`
 	Date    time.Time `db:"date"`
 	Tag     *string   `db:"tag,omitempty"`

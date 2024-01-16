@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"restAPI/internal/repositories"
 	mock_service "restAPI/internal/service/mocks"
 	"strings"
 	"testing"
@@ -58,7 +59,37 @@ func TestHandler_signIn(t *testing.T) {
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: `{"message":"failed to decode request"}`,
 		}, {
-			name:          "error from GenerateToken",
+			name:          "error from GenerateToken: wrong login",
+			inputBody:     `{"login":"testLogin","password":"testPassword"}`,
+			inputLogin:    "testLogin",
+			inputPassword: "testPassword",
+			mockBehavior: func(s *mock_service.MockAuthorization, login, password string) {
+				s.EXPECT().GenerateToken(login, password).Return("", repositories.ErrNoSuchUser)
+			},
+			expectedStatusCode:   http.StatusUnauthorized,
+			expectedResponseBody: `{"message":"wrong login"}`,
+		}, {
+			name:          "error from GenerateToken: wrong password",
+			inputBody:     `{"login":"testLogin","password":"testPassword"}`,
+			inputLogin:    "testLogin",
+			inputPassword: "testPassword",
+			mockBehavior: func(s *mock_service.MockAuthorization, login, password string) {
+				s.EXPECT().GenerateToken(login, password).Return("", repositories.ErrWrongPassword)
+			},
+			expectedStatusCode:   http.StatusUnauthorized,
+			expectedResponseBody: `{"message":"wrong password"}`,
+		}, {
+			name:          "error from GenerateToken: internal problem two same login in system",
+			inputBody:     `{"login":"testLogin","password":"testPassword"}`,
+			inputLogin:    "testLogin",
+			inputPassword: "testPassword",
+			mockBehavior: func(s *mock_service.MockAuthorization, login, password string) {
+				s.EXPECT().GenerateToken(login, password).Return("", repositories.ErrTwoSameLoginInDb)
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: `{"message":"failed to login"}`,
+		}, {
+			name:          "error from GenerateToken: internal problem",
 			inputBody:     `{"login":"testLogin","password":"testPassword"}`,
 			inputLogin:    "testLogin",
 			inputPassword: "testPassword",

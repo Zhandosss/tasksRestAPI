@@ -25,7 +25,7 @@ type allGetterByUser interface {
 // @ID getAllUserTasks
 // @Produce json
 // @Success 200 {object} getAllResponse
-// @Failure 403 {object} response.Message
+// @Failure 401 {object} response.Message
 // @Failure 500 {object} response.Message
 // @Failure default {object} response.Message
 // @Router /tasks/ [get]
@@ -39,7 +39,7 @@ func GetAll(log *slog.Logger, getter allGetterByUser) http.HandlerFunc {
 
 		if userID <= 0 {
 			log.Error("couldn't get userID")
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			render.JSON(w, r, response.Message{
 				Msg: "failed to get auth id",
 			})
@@ -47,6 +47,7 @@ func GetAll(log *slog.Logger, getter allGetterByUser) http.HandlerFunc {
 		}
 
 		tasks, err := getter.GetAllByUser(userID)
+
 		if err != nil {
 			log.Error("couldn't get all tasks by this user", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)

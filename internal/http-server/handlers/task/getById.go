@@ -1,6 +1,7 @@
 package task
 
 import (
+	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"restAPI/internal/http-server/response"
 	"restAPI/internal/model"
+	"restAPI/internal/repositories"
 	"strconv"
 )
 
@@ -28,7 +30,7 @@ type taskGetter interface {
 // @Param task_id path int true "task ID"
 // @Produce json
 // @Success 200 {object} getTaskResponse
-// @Failure 400,403 {object} response.Message
+// @Failure 400,401,404 {object} response.Message
 // @Failure 500 {object} response.Message
 // @Failure default {object} response.Message
 // @Router /tasks/{taskId} [get]
@@ -42,15 +44,15 @@ func Get(log *slog.Logger, taskGetter taskGetter) http.HandlerFunc {
 
 		if userID <= 0 {
 			log.Error("couldn't get userID")
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			render.JSON(w, r, response.Message{
 				Msg: "failed to get auth id",
 			})
 			return
 		}
 
-		taskIdString := chi.URLParam(r, "taskId")
-		if taskIdString == "" {
+		taskIDString := chi.URLParam(r, "taskId")
+		if taskIDString == "" {
 			log.Error("failed to get task id from url")
 			w.WriteHeader(http.StatusBadRequest)
 			render.JSON(w, r, response.Message{
@@ -58,7 +60,7 @@ func Get(log *slog.Logger, taskGetter taskGetter) http.HandlerFunc {
 			})
 			return
 		}
-		taskId, err := strconv.Atoi(taskIdString)
+		taskID, err := strconv.Atoi(taskIDString)
 		if err != nil {
 			log.Error("incorrect task id record", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusBadRequest)
@@ -67,7 +69,15 @@ func Get(log *slog.Logger, taskGetter taskGetter) http.HandlerFunc {
 			})
 			return
 		}
-		task, err := taskGetter.GetTask(int64(taskId), userID)
+		task, err := taskGetter.GetTask(int64(taskID), userID)
+		if errors.Is(err, repositories.ErrNoTask) {
+			log.Error("there is no task", slog.Int64("userID", userID), slog.Int("taskID", taskID))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, response.Message{
+				Msg: "there no task with this taskID",
+			})
+			return
+		}
 		if err != nil {
 			log.Error("can't found task", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -76,7 +86,7 @@ func Get(log *slog.Logger, taskGetter taskGetter) http.HandlerFunc {
 			})
 			return
 		}
-		log.Info("task copied by id", slog.Int("id", taskId))
+		log.Info("task copied by id", slog.Int("id", taskID))
 		render.JSON(w, r, getTaskResponse{
 			Task: task,
 		})

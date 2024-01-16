@@ -1,12 +1,14 @@
 package task
 
 import (
+	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"restAPI/internal/http-server/response"
+	"restAPI/internal/repositories"
 	"strconv"
 )
 
@@ -29,7 +31,7 @@ type taskUpdater interface {
 // @Param task_id path int true "task ID"
 // @Produce json
 // @Success 204
-// @Failure 400,403 {object} response.Message
+// @Failure 400,401,404 {object} response.Message
 // @Failure 500 {object} response.Message
 // @Failure default {object} response.Message
 // @Router /tasks/{taskId} [put]
@@ -45,7 +47,7 @@ func Update(log *slog.Logger, updater taskUpdater) http.HandlerFunc {
 
 		if userID <= 0 {
 			log.Error("couldn't get userID")
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			render.JSON(w, r, response.Message{
 				Msg: "failed to get auth id",
 			})
@@ -91,7 +93,14 @@ func Update(log *slog.Logger, updater taskUpdater) http.HandlerFunc {
 		}
 		log.Info("request body decoded", slog.Any("request", req))
 		err = updater.UpdateTask(int64(taskID), userID, req.Text, req.Tags)
-
+		if errors.Is(err, repositories.ErrNoTask) {
+			log.Error("there is no task", slog.Int64("userID", userID), slog.Int("taskID", taskID))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, response.Message{
+				Msg: "there no task with this taskID",
+			})
+			return
+		}
 		if err != nil {
 			log.Error("can't update task", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)

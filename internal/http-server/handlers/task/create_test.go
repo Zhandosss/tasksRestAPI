@@ -70,7 +70,7 @@ func TestHandler_CreateTask(t *testing.T) {
 			name:                 "incorrect user id",
 			userID:               -1,
 			mockBehavior:         func(s *mock_service.MockTask, task model.Task) {},
-			expectedStatusCode:   http.StatusForbidden,
+			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: `{"message":"incorrect userID"}`,
 		}, {
 			name:                 "empty text",

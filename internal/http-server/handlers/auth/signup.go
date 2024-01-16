@@ -1,12 +1,14 @@
 package auth
 
 import (
+	"errors"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"log/slog"
 	"net/http"
 	"restAPI/internal/http-server/response"
 	"restAPI/internal/model"
+	"restAPI/internal/repositories"
 	"restAPI/pkg/lib/verification"
 )
 
@@ -33,7 +35,7 @@ type userCreater interface {
 // @Produce json
 // @Param input body signUpRequest true "user info"
 // @Success 201 {object} signUpResponse
-// @Failure 400 {object} response.Message
+// @Failure 400,409 {object} response.Message
 // @Failure 500 {object} response.Message
 // @Failure default {object} response.Message
 // @Router /auth/sign-up [post]
@@ -69,6 +71,14 @@ func SignUp(log *slog.Logger, creater userCreater) http.HandlerFunc {
 		//creating user and saving him in db
 		//TODO:Различать разные ошибки, например: логин уже существует
 		userId, err := creater.CreateUser(req.User)
+		if errors.Is(err, repositories.ErrUserAlreadyExist) {
+			log.Error("user already exist:", slog.String("login", req.User.Login))
+			w.WriteHeader(http.StatusConflict)
+			render.JSON(w, r, response.Message{
+				Msg: "login already exist, try different one",
+			})
+			return
+		}
 		if err != nil {
 			log.Error("failed to create auth:", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)

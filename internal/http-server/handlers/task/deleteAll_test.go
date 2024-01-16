@@ -37,7 +37,7 @@ func TestHandler_DeleteAll(t *testing.T) {
 			name:                 "incorrect userID",
 			userID:               -1,
 			mockBehavior:         func(s *mock_service.MockTask, userID int64) {},
-			expectedStatusCode:   http.StatusForbidden,
+			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: `{"message":"failed to get auth id"}`,
 		}, {
 			name:   "incorrect DeleteAllByUser return",
@@ -46,7 +46,7 @@ func TestHandler_DeleteAll(t *testing.T) {
 			mockBehavior: func(s *mock_service.MockTask, userID int64) {
 				s.EXPECT().DeleteAllByUser(userID).Return(errors.New("test"))
 			},
-			expectedStatusCode:   http.StatusNotFound,
+			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"message":"couldn't delete all task"}`,
 		},
 	}

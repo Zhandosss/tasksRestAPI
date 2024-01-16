@@ -20,7 +20,8 @@ type allTasksDeleter interface {
 // @ID deleteAllUserTasks
 // @Produce json
 // @Success 204
-// @Failure 404,403 {object} response.Message
+// @Failure 401 {object} response.Message
+// @Failure 500 {object} response.Message
 // @Failure default {object} response.Message
 // @Router /tasks/ [delete]
 func DeleteAll(log *slog.Logger, deleter allTasksDeleter) http.HandlerFunc {
@@ -33,7 +34,7 @@ func DeleteAll(log *slog.Logger, deleter allTasksDeleter) http.HandlerFunc {
 
 		if userID <= 0 {
 			log.Error("couldn't get userID")
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			render.JSON(w, r, response.Message{
 				Msg: "failed to get auth id",
 			})
@@ -44,7 +45,7 @@ func DeleteAll(log *slog.Logger, deleter allTasksDeleter) http.HandlerFunc {
 
 		if err != nil {
 			log.Error("couldn't delete all tasks by this user", slog.String("error", err.Error()))
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusInternalServerError)
 			render.JSON(w, r, response.Message{
 				Msg: "couldn't delete all task",
 			})

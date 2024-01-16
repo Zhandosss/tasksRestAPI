@@ -54,7 +54,7 @@ func TestHandler_GetAll(t *testing.T) {
 			name:                 "incorrect userID",
 			userID:               -1,
 			mockBehavior:         func(s *mock_service.MockTask, userID int64) {},
-			expectedStatusCode:   http.StatusForbidden,
+			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: `{"message":"failed to get auth id"}`,
 		}, {
 			name:   "incorrect GetAllByUser return",

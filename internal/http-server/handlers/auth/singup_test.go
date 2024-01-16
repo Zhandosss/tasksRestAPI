@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"restAPI/internal/model"
+	"restAPI/internal/repositories"
 	mock_service "restAPI/internal/service/mocks"
 	"strings"
 	"testing"
@@ -84,9 +85,23 @@ func TestHandler_signUp(t *testing.T) {
 			mockBehavior:         func(s *mock_service.MockAuthorization, user model.User) {},
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: `{"message":"failed to decode request"}`,
+		}, {
+			name:      "error from CreateUser: UserAlreadyExist",
+			inputBody: `{"first_name":"firstnameTest","second_name":"secondnameTest","login":"testLogin","password":"passwordTest"}`,
+			inputUser: model.User{
+				FirstName:  "firstnameTest",
+				SecondName: "secondnameTest",
+				Login:      "testLogin",
+				Password:   "passwordTest",
+			},
+			mockBehavior: func(s *mock_service.MockAuthorization, user model.User) {
+				s.EXPECT().CreateUser(user).Return(int64(0), repositories.ErrUserAlreadyExist)
+			},
+			expectedStatusCode:   http.StatusConflict,
+			expectedResponseBody: `{"message":"login already exist, try different one"}`,
 		},
 		{
-			name:      "error from CreateUser",
+			name:      "error from CreateUser: internal error",
 			inputBody: `{"first_name":"firstnameTest","second_name":"secondnameTest","login":"testLogin","password":"passwordTest"}`,
 			inputUser: model.User{
 				FirstName:  "firstnameTest",
