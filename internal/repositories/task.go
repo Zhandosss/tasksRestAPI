@@ -138,11 +138,6 @@ func (r *TaskPostgres) DeleteTask(taskID, userID int64) error {
 	if rowsAffected == 0 {
 		return fmt.Errorf("%s: %w", op, ErrNoTask)
 	}
-	query = "DELETE FROM tags_in_task WHERE task_id = $1"
-	res, err = r.db.Exec(query, taskID)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
 	if tx.Commit() != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

@@ -65,7 +65,7 @@ func SignUp(log *slog.Logger, creater userCreater) http.HandlerFunc {
 			})
 			return
 		}
-		log.Debug("auth decoded", slog.String("firstname", req.FirstName), slog.String("secondname", req.SecondName), slog.String("login", req.Login))
+		log.Debug("auth decoded", slog.String("firstname", req.FirstName), slog.String("lastname", req.LastName), slog.String("login", req.Login))
 		log.Info("request body decoded", slog.Any("request", req))
 
 		//creating user and saving him in db

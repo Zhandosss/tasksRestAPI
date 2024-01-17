@@ -30,12 +30,12 @@ func TestHandler_signUp(t *testing.T) {
 	}{
 		{
 			name:      "Correct working",
-			inputBody: `{"first_name":"firstnameTest","second_name":"secondnameTest","login":"testLogin","password":"passwordTest"}`,
+			inputBody: `{"first_name":"firstnameTest","last_name":"lastnameTest","login":"testLogin","password":"passwordTest"}`,
 			inputUser: model.User{
-				FirstName:  "firstnameTest",
-				SecondName: "secondnameTest",
-				Login:      "testLogin",
-				Password:   "passwordTest",
+				FirstName: "firstnameTest",
+				LastName:  "lastnameTest",
+				Login:     "testLogin",
+				Password:  "passwordTest",
 			},
 			mockBehavior: func(s *mock_service.MockAuthorization, user model.User) {
 				s.EXPECT().CreateUser(user).Return(int64(1), nil)
@@ -62,12 +62,12 @@ func TestHandler_signUp(t *testing.T) {
 			expectedResponseBody: `{"message":"wrong json fields"}`,
 		}, {
 			name:      "incorrect request 1",
-			inputBody: `{"first_name:"firstnameTest","second_name":"secondnameTest","login":"testLogin","password":"passwordTest"}`,
+			inputBody: `{"first_name:"firstnameTest","last_name":"lastnameTest","login":"testLogin","password":"passwordTest"}`,
 			inputUser: model.User{
-				FirstName:  "firstnameTest",
-				SecondName: "secondnameTest",
-				Login:      "testLogin",
-				Password:   "passwordTest",
+				FirstName: "firstnameTest",
+				LastName:  "lastnameTest",
+				Login:     "testLogin",
+				Password:  "passwordTest",
 			},
 			mockBehavior:         func(s *mock_service.MockAuthorization, user model.User) {},
 			expectedStatusCode:   http.StatusBadRequest,
@@ -76,23 +76,23 @@ func TestHandler_signUp(t *testing.T) {
 			name:      "incorrect request 2",
 			inputBody: ``,
 			inputUser: model.User{
-				ID:         1,
-				FirstName:  "firstnameTest",
-				SecondName: "secondnameTest",
-				Login:      "testLogin",
-				Password:   "passwordTest",
+				ID:        1,
+				FirstName: "firstnameTest",
+				LastName:  "lastnameTest",
+				Login:     "testLogin",
+				Password:  "passwordTest",
 			},
 			mockBehavior:         func(s *mock_service.MockAuthorization, user model.User) {},
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: `{"message":"failed to decode request"}`,
 		}, {
 			name:      "error from CreateUser: UserAlreadyExist",
-			inputBody: `{"first_name":"firstnameTest","second_name":"secondnameTest","login":"testLogin","password":"passwordTest"}`,
+			inputBody: `{"first_name":"firstnameTest","last_name":"lastnameTest","login":"testLogin","password":"passwordTest"}`,
 			inputUser: model.User{
-				FirstName:  "firstnameTest",
-				SecondName: "secondnameTest",
-				Login:      "testLogin",
-				Password:   "passwordTest",
+				FirstName: "firstnameTest",
+				LastName:  "lastnameTest",
+				Login:     "testLogin",
+				Password:  "passwordTest",
 			},
 			mockBehavior: func(s *mock_service.MockAuthorization, user model.User) {
 				s.EXPECT().CreateUser(user).Return(int64(0), repositories.ErrUserAlreadyExist)
@@ -102,12 +102,12 @@ func TestHandler_signUp(t *testing.T) {
 		},
 		{
 			name:      "error from CreateUser: internal error",
-			inputBody: `{"first_name":"firstnameTest","second_name":"secondnameTest","login":"testLogin","password":"passwordTest"}`,
+			inputBody: `{"first_name":"firstnameTest","last_name":"lastnameTest","login":"testLogin","password":"passwordTest"}`,
 			inputUser: model.User{
-				FirstName:  "firstnameTest",
-				SecondName: "secondnameTest",
-				Login:      "testLogin",
-				Password:   "passwordTest",
+				FirstName: "firstnameTest",
+				LastName:  "lastnameTest",
+				Login:     "testLogin",
+				Password:  "passwordTest",
 			},
 			mockBehavior: func(s *mock_service.MockAuthorization, user model.User) {
 				s.EXPECT().CreateUser(user).Return(int64(0), errors.New("test"))

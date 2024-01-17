@@ -637,7 +637,7 @@ const docTemplate = `{
                 "password": {
                     "type": "string"
                 },
-                "second_name": {
+                "last_name": {
                     "type": "string"
                 }
             }

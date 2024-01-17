@@ -45,9 +45,9 @@ func (r *AuthPostgres) CreateUser(user model.User) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
-	query := `INSERT INTO users (firstname, secondname, login, password_hash) 
+	query := `INSERT INTO users (firstname, lastname, login, password_hash) 
 		      VALUES ($1, $2, $3, $4) RETURNING id`
-	err = r.db.Get(&userID, query, user.FirstName, user.SecondName, user.Login, user.Password)
+	err = r.db.Get(&userID, query, user.FirstName, user.LastName, user.Login, user.Password)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
@@ -65,7 +65,7 @@ func (r *AuthPostgres) GetUser(login, password string) (model.User, error) {
 	}
 	defer tx.Rollback()
 	user := make([]model.User, 0)
-	query := `SELECT id, firstname, secondname, login, password_hash
+	query := `SELECT id, firstname, lastname, login, password_hash
 			 FROM users WHERE login = $1 `
 	err = r.db.Select(&user, query, login)
 	if err != nil {

@@ -32,7 +32,7 @@ func TestHandler_CreateTask(t *testing.T) {
 	}{
 		{
 			name:      "correct working with tags",
-			inputBody: `{"text":"TestText","tags":["TestTag1","TestTag2"],"date":"1000-10-10T10:10:10.000Z"}`,
+			inputBody: `{"text":"TestText","tags":["TestTag1","TestTag2"]}`,
 			inputTask: model.Task{
 				Text:    "TestText",
 				Tags:    []string{"TestTag1", "TestTag2"},
@@ -47,7 +47,7 @@ func TestHandler_CreateTask(t *testing.T) {
 			expectedResponseBody: `{"task_id":1}`,
 		}, {
 			name:      "correct working without tags",
-			inputBody: `{"text":"TestText","date":"1000-10-10T10:10:10.000Z"}`,
+			inputBody: `{"text":"TestText"}`,
 			inputTask: model.Task{
 				Text:    "TestText",
 				Date:    time.Date(1000, 10, 10, 10, 10, 10, 0, time.UTC),
@@ -61,7 +61,7 @@ func TestHandler_CreateTask(t *testing.T) {
 			expectedResponseBody: `{"task_id":1}`,
 		}, {
 			name:                 "incorrect request",
-			inputBody:            `{"text":"TestText,"date":"1000-10-10T10:10:10.000Z"}`,
+			inputBody:            `{"text":"TestText}`,
 			userID:               1,
 			mockBehavior:         func(s *mock_service.MockTask, task model.Task) {},
 			expectedStatusCode:   http.StatusBadRequest,
@@ -74,21 +74,14 @@ func TestHandler_CreateTask(t *testing.T) {
 			expectedResponseBody: `{"message":"incorrect userID"}`,
 		}, {
 			name:                 "empty text",
-			inputBody:            `{"text":"","tags":["TestTag1","TestTag2"],"date":"1000-10-10T10:10:10.000Z"}`,
-			userID:               1,
-			mockBehavior:         func(s *mock_service.MockTask, task model.Task) {},
-			expectedStatusCode:   http.StatusBadRequest,
-			expectedResponseBody: `{"message":"incorrect task information"}`,
-		}, {
-			name:                 "too late",
-			inputBody:            `{"text":"testText","tags":["TestTag1","TestTag2"],"date":"1000-10-10T10:10:09.000Z"}`,
+			inputBody:            `{"text":"","tags":["TestTag1","TestTag2"]}`,
 			userID:               1,
 			mockBehavior:         func(s *mock_service.MockTask, task model.Task) {},
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: `{"message":"incorrect task information"}`,
 		}, {
 			name:      "incorrect CreateTask work",
-			inputBody: `{"text":"TestText","tags":["TestTag1","TestTag2"],"date":"1000-10-10T10:10:10.000Z"}`,
+			inputBody: `{"text":"TestText","tags":["TestTag1","TestTag2"]}`,
 			inputTask: model.Task{
 				Text:    "TestText",
 				Tags:    []string{"TestTag1", "TestTag2"},

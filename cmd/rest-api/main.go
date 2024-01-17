@@ -19,6 +19,7 @@ import (
 	"restAPI/internal/repositories"
 	"restAPI/internal/service"
 	"restAPI/pkg/logger"
+	"time"
 )
 
 //@title Task App API
@@ -80,7 +81,7 @@ func main() {
 		router.Use(jwtAuth.New(log, services))
 
 		router.Route("/tasks", func(router chi.Router) {
-			router.Post("/", task.Create(log, services))
+			router.Post("/", task.Create(log, services, time.Now()))
 			router.Get("/{taskId}", task.Get(log, services))
 			router.Get("/", task.GetAll(log, services))
 			router.Delete("/{taskId}", task.Delete(log, services))

@@ -37,7 +37,7 @@ type taskCreater interface {
 // @Failure 500 {object} response.Message
 // @Failure default {object} response.Message
 // @Router /tasks/ [post]
-func Create(log *slog.Logger, creater taskCreater) http.HandlerFunc {
+func Create(log *slog.Logger, creater taskCreater, callTime time.Time) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log := log.With(
 			slog.String("requestID", middleware.GetReqID(r.Context())),
@@ -68,7 +68,7 @@ func Create(log *slog.Logger, creater taskCreater) http.HandlerFunc {
 		}
 
 		req.Task.OwnerID = userID
-		req.Task.Date = time.Now()
+		req.Task.Date = callTime
 		//task verification
 		//TODO: ADD request body in logger output
 		if !verification.Task(req.Task) {

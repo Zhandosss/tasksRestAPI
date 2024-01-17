@@ -11,8 +11,6 @@ import (
 var (
 	ErrNoTask           = errors.New("task not found")
 	ErrEmptyTable       = errors.New("table is empty")
-	ErrNoTasksByDate    = errors.New("no tasks found by this date")
-	ErrNoTasksByTag     = errors.New("no tasks found by this tag")
 	ErrUserAlreadyExist = errors.New("user already exist")
 	ErrNoSuchUser       = errors.New("there is no such user")
 	ErrTwoSameLoginInDb = errors.New("there is two same user logins in db")
